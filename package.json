@@ -1,0 +1,60 @@
+{
+  "name": "blood-donors-ufe",
+  "version": "0.0.1",
+  "description": "Microfrontend pre registráciu a správu darcov krvi (WAC, cv2xvancoa)",
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.js",
+  "types": "dist/types/index.d.ts",
+  "collection": "dist/collection/collection-manifest.json",
+  "collection:main": "dist/collection/index.js",
+  "unpkg": "dist/blood-donors-ufe/blood-donors-ufe.esm.js",
+  "exports": {
+    ".": {
+      "import": "./dist/blood-donors-ufe/blood-donors-ufe.esm.js",
+      "require": "./dist/blood-donors-ufe/blood-donors-ufe.cjs.js"
+    },
+    "./loader": {
+      "import": "./loader/index.js",
+      "require": "./loader/index.cjs",
+      "types": "./loader/index.d.ts"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AdrianVanco/blood-donors-ufe.git"
+  },
+  "files": [
+    "dist/",
+    "loader/"
+  ],
+  "scripts": {
+    "convert-openapi": "js-yaml  ./api/blood-donors.openapi.yaml > .openapi.json",
+    "mock-api": "open-api-mocker --schema .openapi.json --port 5000",
+    "start:app": "stencil build --dev --watch --serve",
+    "start:mock": "run-s convert-openapi mock-api",
+    "start": "run-p -r start:mock start:app",
+    "build": "stencil build",
+    "test": "stencil test --spec --e2e",
+    "test.watch": "stencil test --spec --e2e --watchAll",
+    "generate": "stencil generate",
+    "openapi": "openapi-generator-cli generate",
+    "test:jest": "jest --config ./jest.config.js"
+  },
+  "devDependencies": {
+    "@openapitools/openapi-generator-cli": "^2.30.2",
+    "@stencil/core": "^4.27.1",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.13.5",
+    "jest": "^29.7.0",
+    "jest-cli": "^29.7.0",
+    "jest-fetch-mock": "^3.0.3",
+    "js-yaml": "^4.1.1",
+    "npm-run-all": "^4.1.5",
+    "open-api-mocker": "^2.0.0",
+    "puppeteer": "^24.3.0"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@material/web": "^2.4.1"
+  }
+}

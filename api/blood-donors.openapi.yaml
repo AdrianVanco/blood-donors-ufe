@@ -1,0 +1,412 @@
+openapi: 3.0.0
+servers:
+  - description: Cluster Endpoint
+    url: /api
+info:
+  description: Blood donor registration and management for Web-In-Cloud system
+  version: "1.0.0"
+  title: Blood Donors Api
+  contact:
+    email: vancoa@stuba.sk
+  license:
+    name: CC BY 4.0
+    url: "https://creativecommons.org/licenses/by/4.0/"
+tags:
+  - name: bloodDonors
+    description: Blood donor registration and management API
+  - name: donationTypes
+    description: Types of donation offered at the transfusion station (whole blood, plasma, platelets)
+
+paths:
+  "/blood-donors/{siteId}/donors":
+    get:
+      tags:
+        - bloodDonors
+      summary: Provides the list of registered donors
+      operationId: getDonors
+      description: By using siteId you get list of registered donors at the donation site
+      parameters:
+        - in: path
+          name: siteId
+          description: pass the id of the particular donation site
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: value of the donors list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Donor"
+              examples:
+                response:
+                  $ref: "#/components/examples/DonorsExample"
+        "404":
+          description: Donation site with such ID does not exist
+    post:
+      tags:
+        - bloodDonors
+      summary: Registers a new donor
+      operationId: createDonor
+      description: Use this method to register a new donor at the donation site.
+      parameters:
+        - in: path
+          name: siteId
+          description: pass the id of the particular donation site
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Donor"
+            examples:
+              request:
+                $ref: "#/components/examples/DonorExample"
+        description: Donor to register
+        required: true
+      responses:
+        "200":
+          description: >-
+            Value of the registered donor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donor"
+              examples:
+                updated:
+                  $ref: "#/components/examples/DonorExample"
+        "400":
+          description: Missing mandatory properties of input object.
+        "404":
+          description: Donation site with such ID does not exist
+        "409":
+          description: Requested appointment time is already taken by another donor
+  "/blood-donors/{siteId}/donors/{entryId}":
+    get:
+      tags:
+        - bloodDonors
+      summary: Provides details about a donor
+      operationId: getDonor
+      description: By using siteId and entryId you get details of a particular donor
+      parameters:
+        - in: path
+          name: siteId
+          description: pass the id of the particular donation site
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: entryId
+          description: pass the id of the particular donor
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: value of the donor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donor"
+              examples:
+                response:
+                  $ref: "#/components/examples/DonorExample"
+        "404":
+          description: Donation site or Donor with such ID does not exist
+    put:
+      tags:
+        - bloodDonors
+      summary: Updates specific donor
+      operationId: updateDonor
+      description: Use this method to update content of the donor record.
+      parameters:
+        - in: path
+          name: siteId
+          description: pass the id of the particular donation site
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: entryId
+          description: pass the id of the particular donor
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Donor"
+            examples:
+              request:
+                $ref: "#/components/examples/DonorExample"
+        description: Donor record to update
+        required: true
+      responses:
+        "200":
+          description: >-
+            value of the updated donor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donor"
+              examples:
+                response:
+                  $ref: "#/components/examples/DonorExample"
+        "403":
+          description: >-
+            Value of the entryId and the data id is mismatching. Details are
+            provided in the response body.
+        "404":
+          description: Donation site or Donor with such ID does not exist
+        "409":
+          description: Requested appointment time is already taken by another donor
+    delete:
+      tags:
+        - bloodDonors
+      summary: Deletes specific donor registration
+      operationId: deleteDonor
+      description: Use this method to delete the specific donor from the donation site.
+      parameters:
+        - in: path
+          name: siteId
+          description: pass the id of the particular donation site
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: entryId
+          description: pass the id of the particular donor
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Donor deleted
+        "404":
+          description: Donation site or Donor with such ID does not exist
+  "/blood-donors/{siteId}/donation-types":
+    get:
+      tags:
+        - donationTypes
+      summary: Provides the list of donation types associated with the donation site
+      operationId: getDonationTypes
+      description: By using siteId you get list of predefined donation types
+      parameters:
+        - in: path
+          name: siteId
+          description: pass the id of the particular donation site
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: value of the predefined donation types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DonationType"
+              examples:
+                response:
+                  $ref: "#/components/examples/DonationTypesExample"
+        "404":
+          description: Donation site with such ID does not exist
+components:
+  schemas:
+    Donor:
+      type: object
+      required: [id, donorId, registeredSince]
+      properties:
+        id:
+          type: string
+          example: x321ab3
+          description: Unique id of the donor record at this donation site
+        name:
+          type: string
+          example: Adrián Vančo
+          description: Full name of the blood donor
+        donorId:
+          type: string
+          example: 1234567890
+          description: Unique and immutable registration number. Assigned automatically on registration.
+        sex:
+          type: string
+          example: M
+          description: 'Sex of the donor: M (muž) or F (žena)'
+          enum: ["M", "F"]
+        bloodType:
+          type: string
+          example: A+
+          description: Blood type of the donor
+          enum: ["A+", "A-", "B+", "B-", "AB+", "AB-", "0+", "0-"]
+        email:
+          type: string
+          format: email
+          example: vancoadrian7@gmail.com
+          description: Contact e-mail of the donor
+        phone:
+          type: string
+          example: "+421917529741"
+          description: Contact phone number of the donor
+        preferredDonationType:
+          type: string
+          example: blood
+          description: 'Preferred donation type: blood (krv), plasma (krvná plazma) or both (oboje)'
+          enum: ["blood", "plasma", "both"]
+        eligible:
+          type: boolean
+          example: true
+          description: Whether the donor is generally eligible to donate (spôsobilý / nespôsobilý)
+        eligibilityNote:
+          type: string
+          example: Po tetovaní, odber možný od 2026-09
+          description: Reason why the donor is not eligible (used when eligible is false)
+        registeredSince:
+          type: string
+          format: date-time
+          example: "2026-05-20T09:00:00.000Z"
+          description: Timestamp since when the donor is registered
+        appointmentStart:
+          type: string
+          format: date-time
+          example: "2026-06-29T08:30:00.000Z"
+          description: Reserved appointment time of the next donation. Ignored on post.
+        donations:
+          type: array
+          description: History of the donor's donations / appointments (termíny)
+          items:
+            $ref: "#/components/schemas/Donation"
+    Donation:
+      type: object
+      description: A single donation in the donor's history (past or upcoming appointment)
+      properties:
+        date:
+          type: string
+          format: date-time
+          example: "2025-07-10T09:00:00.000Z"
+        donationType:
+          $ref: "#/components/schemas/DonationType"
+        status:
+          type: string
+          example: Rezervácia dokončená
+    DonationType:
+      description: Describes the type of donation (whole blood, plasma, platelets)
+      required:
+        - value
+      properties:
+        value:
+          type: string
+          example: Darovanie krvi
+        code:
+          type: string
+          example: blood
+        reference:
+          type: string
+          example: "https://www.ntssr.sk/darcovstvo-krvi"
+          description: Link to detailed explanation of the donation type
+        typicalDurationMinutes:
+          type: integer
+          format: int32
+          example: 15
+      type: object
+    DonationSite:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          example: bratislava-bory
+          description: Unique identifier of the donation site
+        name:
+          type: string
+          example: Bratislava Bory
+          description: Human readable display name of the donation site
+        address:
+          type: string
+          example: "Cesta mládeže 2/A, Malacky"
+          description: Postal address of the donation site
+        donors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Donor"
+        predefinedDonationTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/DonationType"
+  examples:
+    DonorExample:
+      summary: Registered donor
+      description: |
+        Example of a donor registered for a whole-blood donation appointment.
+      value:
+        id: x321ab3
+        name: Adrián Vančo
+        donorId: "1234567890"
+        sex: M
+        bloodType: A+
+        email: vancoadrian7@gmail.com
+        phone: "+421917529741"
+        preferredDonationType: blood
+        eligible: true
+        registeredSince: "2026-05-20T09:00:00.000Z"
+        appointmentStart: "2026-06-29T08:30:00.000Z"
+        donations:
+          - date: "2025-07-10T09:00:00.000Z"
+            donationType: { value: Darovanie krvi, code: blood }
+            status: Rezervácia dokončená
+          - date: "2024-02-13T10:45:00.000Z"
+            donationType: { value: Darovanie krvi, code: blood }
+            status: Rezervácia dokončená
+    DonorsExample:
+      summary: List of registered donors
+      description: Example list of donors registered at the donation site
+      value:
+        - id: x321ab3
+          name: Adrián Vančo
+          donorId: "1234567890"
+          sex: M
+          bloodType: A+
+          email: vancoadrian7@gmail.com
+          phone: "+421917529741"
+          preferredDonationType: blood
+          eligible: true
+          registeredSince: "2026-05-20T09:00:00.000Z"
+          appointmentStart: "2026-06-29T08:30:00.000Z"
+          donations:
+            - date: "2025-07-10T09:00:00.000Z"
+              donationType: { value: Darovanie krvi, code: blood }
+              status: Rezervácia dokončená
+        - id: y998kl2
+          name: Jana Nováková
+          donorId: "9876543210"
+          sex: F
+          bloodType: 0-
+          email: jana.novakova@example.com
+          phone: "+421900111222"
+          preferredDonationType: plasma
+          eligible: false
+          eligibilityNote: Chronické ochorenie, darovanie nie je možné
+          registeredSince: "2026-05-21T10:00:00.000Z"
+          appointmentStart: "2026-06-29T11:00:00.000Z"
+          donations: []
+    DonationTypesExample:
+      summary: Predefined donation types
+      description: |
+        Donation types offered at the site. Plasma donation (plasma) is only
+        available Monday-Thursday in two slots per day at 11:00 and 13:00.
+      value:
+        - value: Darovanie krvi
+          code: blood
+          reference: "https://www.ntssr.sk/darcovstvo-krvi"
+          typicalDurationMinutes: 15
+        - value: Darovanie krvnej plazmy
+          code: plasma
+          reference: "https://www.ntssr.sk/web/o_darovani_krvi/typy_odberov"
+          typicalDurationMinutes: 45
