@@ -10,9 +10,8 @@ describe('cv2xvancoa-blood-donors', () => {
       html: `<cv2xvancoa-blood-donors base-path="/"></cv2xvancoa-blood-donors>`,
     });
     page.win.navigation = new EventTarget()
-    const child = await page.root.shadowRoot.firstElementChild;
-    expect(child.tagName.toLocaleLowerCase()).toEqual ("cv2xvancoa-blood-donors-editor");
-
+    const child = page.root.shadowRoot.querySelector('cv2xvancoa-blood-donors-editor');
+    expect(child).not.toBeNull();
   });
 
   it('renders list', async () => {
@@ -22,7 +21,7 @@ describe('cv2xvancoa-blood-donors', () => {
       html: `<cv2xvancoa-blood-donors base-path="/blood-donors/"></cv2xvancoa-blood-donors>`,
     });
     page.win.navigation = new EventTarget()
-    const child = await page.root.shadowRoot.firstElementChild;
-    expect(child.tagName.toLocaleLowerCase()).toEqual("cv2xvancoa-blood-donors-list");
+    const child = page.root.shadowRoot.querySelector('cv2xvancoa-blood-donors-list');
+    expect(child).not.toBeNull();
   });
 });

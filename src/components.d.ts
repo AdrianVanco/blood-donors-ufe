@@ -19,6 +19,10 @@ export namespace Components {
         "basePath": string;
         "siteId": string;
     }
+    interface Cv2xvancoaBloodDonorsCalendar {
+        "apiBase": string;
+        "siteId": string;
+    }
     interface Cv2xvancoaBloodDonorsEditor {
         "apiBase": string;
         "entryId": string;
@@ -53,6 +57,12 @@ declare global {
     var HTMLCv2xvancoaBloodDonorsElement: {
         prototype: HTMLCv2xvancoaBloodDonorsElement;
         new (): HTMLCv2xvancoaBloodDonorsElement;
+    };
+    interface HTMLCv2xvancoaBloodDonorsCalendarElement extends Components.Cv2xvancoaBloodDonorsCalendar, HTMLStencilElement {
+    }
+    var HTMLCv2xvancoaBloodDonorsCalendarElement: {
+        prototype: HTMLCv2xvancoaBloodDonorsCalendarElement;
+        new (): HTMLCv2xvancoaBloodDonorsCalendarElement;
     };
     interface HTMLCv2xvancoaBloodDonorsEditorElementEventMap {
         "editor-closed": string;
@@ -95,6 +105,7 @@ declare global {
     };
     interface HTMLElementTagNameMap {
         "cv2xvancoa-blood-donors": HTMLCv2xvancoaBloodDonorsElement;
+        "cv2xvancoa-blood-donors-calendar": HTMLCv2xvancoaBloodDonorsCalendarElement;
         "cv2xvancoa-blood-donors-editor": HTMLCv2xvancoaBloodDonorsEditorElement;
         "cv2xvancoa-blood-donors-list": HTMLCv2xvancoaBloodDonorsListElement;
     }
@@ -111,6 +122,10 @@ declare namespace LocalJSX {
           * @default ""
          */
         "basePath"?: string;
+        "siteId"?: string;
+    }
+    interface Cv2xvancoaBloodDonorsCalendar {
+        "apiBase"?: string;
         "siteId"?: string;
     }
     interface Cv2xvancoaBloodDonorsEditor {
@@ -135,6 +150,10 @@ declare namespace LocalJSX {
         "apiBase": string;
         "siteId": string;
     }
+    interface Cv2xvancoaBloodDonorsCalendarAttributes {
+        "apiBase": string;
+        "siteId": string;
+    }
     interface Cv2xvancoaBloodDonorsEditorAttributes {
         "entryId": string;
         "siteId": string;
@@ -147,6 +166,7 @@ declare namespace LocalJSX {
 
     interface IntrinsicElements {
         "cv2xvancoa-blood-donors": Omit<Cv2xvancoaBloodDonors, keyof Cv2xvancoaBloodDonorsAttributes> & { [K in keyof Cv2xvancoaBloodDonors & keyof Cv2xvancoaBloodDonorsAttributes]?: Cv2xvancoaBloodDonors[K] } & { [K in keyof Cv2xvancoaBloodDonors & keyof Cv2xvancoaBloodDonorsAttributes as `attr:${K}`]?: Cv2xvancoaBloodDonorsAttributes[K] } & { [K in keyof Cv2xvancoaBloodDonors & keyof Cv2xvancoaBloodDonorsAttributes as `prop:${K}`]?: Cv2xvancoaBloodDonors[K] };
+        "cv2xvancoa-blood-donors-calendar": Omit<Cv2xvancoaBloodDonorsCalendar, keyof Cv2xvancoaBloodDonorsCalendarAttributes> & { [K in keyof Cv2xvancoaBloodDonorsCalendar & keyof Cv2xvancoaBloodDonorsCalendarAttributes]?: Cv2xvancoaBloodDonorsCalendar[K] } & { [K in keyof Cv2xvancoaBloodDonorsCalendar & keyof Cv2xvancoaBloodDonorsCalendarAttributes as `attr:${K}`]?: Cv2xvancoaBloodDonorsCalendarAttributes[K] } & { [K in keyof Cv2xvancoaBloodDonorsCalendar & keyof Cv2xvancoaBloodDonorsCalendarAttributes as `prop:${K}`]?: Cv2xvancoaBloodDonorsCalendar[K] };
         "cv2xvancoa-blood-donors-editor": Omit<Cv2xvancoaBloodDonorsEditor, keyof Cv2xvancoaBloodDonorsEditorAttributes> & { [K in keyof Cv2xvancoaBloodDonorsEditor & keyof Cv2xvancoaBloodDonorsEditorAttributes]?: Cv2xvancoaBloodDonorsEditor[K] } & { [K in keyof Cv2xvancoaBloodDonorsEditor & keyof Cv2xvancoaBloodDonorsEditorAttributes as `attr:${K}`]?: Cv2xvancoaBloodDonorsEditorAttributes[K] } & { [K in keyof Cv2xvancoaBloodDonorsEditor & keyof Cv2xvancoaBloodDonorsEditorAttributes as `prop:${K}`]?: Cv2xvancoaBloodDonorsEditor[K] };
         "cv2xvancoa-blood-donors-list": Omit<Cv2xvancoaBloodDonorsList, keyof Cv2xvancoaBloodDonorsListAttributes> & { [K in keyof Cv2xvancoaBloodDonorsList & keyof Cv2xvancoaBloodDonorsListAttributes]?: Cv2xvancoaBloodDonorsList[K] } & { [K in keyof Cv2xvancoaBloodDonorsList & keyof Cv2xvancoaBloodDonorsListAttributes as `attr:${K}`]?: Cv2xvancoaBloodDonorsListAttributes[K] } & { [K in keyof Cv2xvancoaBloodDonorsList & keyof Cv2xvancoaBloodDonorsListAttributes as `prop:${K}`]?: Cv2xvancoaBloodDonorsList[K] };
     }
@@ -161,6 +181,7 @@ declare module "@stencil/core" {
              * zoznam darcov alebo editor konkrétneho darcu - funguje ako jednoduchý router.
              */
             "cv2xvancoa-blood-donors": LocalJSX.IntrinsicElements["cv2xvancoa-blood-donors"] & JSXBase.HTMLAttributes<HTMLCv2xvancoaBloodDonorsElement>;
+            "cv2xvancoa-blood-donors-calendar": LocalJSX.IntrinsicElements["cv2xvancoa-blood-donors-calendar"] & JSXBase.HTMLAttributes<HTMLCv2xvancoaBloodDonorsCalendarElement>;
             "cv2xvancoa-blood-donors-editor": LocalJSX.IntrinsicElements["cv2xvancoa-blood-donors-editor"] & JSXBase.HTMLAttributes<HTMLCv2xvancoaBloodDonorsEditorElement>;
             /**
              * Zoznam registrovaných darcov pre pracovníka transfúznej stanice (scenár Darca/R).

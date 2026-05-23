@@ -1,0 +1,236 @@
+:host {
+  --blood: #c8102e;
+  --plasma: #f0a500;
+  --navy: #16306b;
+  --grey: #d9d9d9;
+
+  display: block;
+  width: 100%;
+  padding: 1rem;
+  box-sizing: border-box;
+  font-family: 'Roboto', sans-serif;
+  color: var(--navy);
+}
+
+/* notifikácia po rezervácii */
+.notice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #e6f4ea;
+  color: #1e7e34;
+  border: 1px solid #1e7e34;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.notice-close {
+  margin-left: auto;
+  cursor: pointer;
+}
+
+/* toolbar: prepínač typu + výber miesta */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.type-toggle {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.type {
+  border: none;
+  border-radius: 999px;
+  padding: 0.6rem 1.25rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: #eee;
+  color: #777;
+}
+
+.type.blood.active {
+  background: var(--blood);
+  color: #fff;
+}
+
+.type.plasma.active {
+  background: var(--plasma);
+  color: #fff;
+}
+
+/* navigácia mesiacov - šípky sú v jednom rade s mesiacmi */
+.nav-btn {
+  margin-top: 0.25rem;
+}
+
+.month-title {
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+/* dva mesiace vedľa seba (na úzkom pod sebou) */
+.months {
+  display: flex;
+  justify-content: center;
+  gap: 4rem;
+}
+
+@media (max-width: 700px) {
+  .months {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+.months {
+  align-items: flex-start;
+}
+
+.dow-row,
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 4.5rem);
+  gap: 16px;
+  justify-content: center;
+}
+
+.dow {
+  text-align: center;
+  font-weight: 700;
+  padding: 0.25rem 0;
+}
+
+.cell {
+  width: 4.5rem;
+  height: 3.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.dow {
+  width: 4.5rem;
+}
+
+.cell.empty {
+  background: transparent;
+}
+
+.cell.day {
+  cursor: pointer;
+  color: #fff;
+}
+
+.cell.day.available.blood {
+  background: var(--blood);
+}
+
+.cell.day.available.plasma {
+  background: var(--plasma);
+}
+
+.cell.day.unavailable {
+  background: var(--grey);
+  color: #888;
+  cursor: not-allowed;
+}
+
+.cell.day.selected {
+  outline: 3px solid var(--navy);
+}
+
+/* časové sloty */
+.slots-panel {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.slots-panel h3 {
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  margin: 1rem 0;
+}
+
+.slot {
+  border: none;
+  border-radius: 999px;
+  padding: 0.6rem 1.75rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+}
+
+.slot.blood {
+  background: var(--blood);
+}
+
+.slot.plasma {
+  background: var(--plasma);
+}
+
+.slot.selected {
+  outline: 3px solid var(--navy);
+}
+
+.confirm {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* legenda */
+.legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.swatch {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.swatch.available.blood {
+  background: var(--blood);
+}
+
+.swatch.available.plasma {
+  background: var(--plasma);
+}
+
+.swatch.unavailable {
+  background: var(--grey);
+}
