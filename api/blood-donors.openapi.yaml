@@ -295,7 +295,19 @@ components:
           $ref: "#/components/schemas/DonationType"
         status:
           type: string
-          example: Rezervácia dokončená
+          description: >-
+            Stav termínu v postupnom toku (rezervácia -> prehliadka -> odber).
+          example: Odber dokončený
+          enum:
+            - "Rezervácia dokončená"
+            - "Spôsobilý - čaká na odber"
+            - "Odber dokončený"
+            - "Nespôsobilý"
+            - "Zrušená rezervácia"
+        note:
+          type: string
+          description: Doplňujúca informačná poznámka k termínu (napr. dôvod nespôsobilosti)
+          example: Po odbere bez problémov
     DonationType:
       description: Describes the type of donation (whole blood, plasma, platelets)
       required:
@@ -360,10 +372,10 @@ components:
         donations:
           - date: "2025-07-10T09:00:00.000Z"
             donationType: { value: Darovanie krvi, code: blood }
-            status: Rezervácia dokončená
+            status: Odber dokončený
           - date: "2024-02-13T10:45:00.000Z"
             donationType: { value: Darovanie krvi, code: blood }
-            status: Rezervácia dokončená
+            status: Odber dokončený
     DonorsExample:
       summary: List of registered donors
       description: Example list of donors registered at the donation site
@@ -382,7 +394,7 @@ components:
           donations:
             - date: "2025-07-10T09:00:00.000Z"
               donationType: { value: Darovanie krvi, code: blood }
-              status: Rezervácia dokončená
+              status: Odber dokončený
         - id: y998kl2
           name: Jana Nováková
           donorId: "9876543210"

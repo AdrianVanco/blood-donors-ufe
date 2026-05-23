@@ -39,11 +39,18 @@ export interface Donation {
      */
     donationType?: DonationType;
     /**
-     * Status of the donation (e.g. "Rezervácia dokončená", "Dokončené", "Zrušené")
+     * Stav termínu v postupnom toku: "Rezervácia dokončená" -> "Spôsobilý - čaká na odber"
+     * -> "Odber dokončený", prípadne "Nespôsobilý" alebo "Zrušená rezervácia".
      * @type {string}
      * @memberof Donation
      */
     status?: string;
+    /**
+     * Doplňujúca informačná poznámka k termínu (napr. dôvod nespôsobilosti)
+     * @type {string}
+     * @memberof Donation
+     */
+    note?: string;
 }
 
 /**
@@ -66,6 +73,7 @@ export function DonationFromJSONTyped(json: any, ignoreDiscriminator: boolean): 
         'date': !exists(json, 'date') ? undefined : (new Date(json['date'])),
         'donationType': !exists(json, 'donationType') ? undefined : DonationTypeFromJSON(json['donationType']),
         'status': !exists(json, 'status') ? undefined : json['status'],
+        'note': !exists(json, 'note') ? undefined : json['note'],
     };
 }
 
@@ -81,5 +89,6 @@ export function DonationToJSON(value?: Donation | null): any {
         'date': value.date === undefined ? undefined : (value.date.toISOString()),
         'donationType': DonationTypeToJSON(value.donationType),
         'status': value.status,
+        'note': value.note,
     };
 }

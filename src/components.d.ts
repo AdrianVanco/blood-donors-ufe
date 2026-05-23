@@ -19,12 +19,6 @@ export namespace Components {
         "basePath": string;
         "siteId": string;
     }
-    /**
-     * Editor darcu - pridanie, úprava a zmazanie (scenáre Darca/C, U, D).
-     * Eviduje osobné a kontaktné údaje, pohlavie, krvnú skupinu, preferovaný typ odberu,
-     * všeobecnú spôsobilosť na darovanie (pri nespôsobilosti s dôvodom) a zoznam termínov.
-     * Registračné číslo darcu sa pri novej registrácii prideľuje automaticky a je nemenné.
-     */
     interface Cv2xvancoaBloodDonorsEditor {
         "apiBase": string;
         "entryId": string;
@@ -63,12 +57,6 @@ declare global {
     interface HTMLCv2xvancoaBloodDonorsEditorElementEventMap {
         "editor-closed": string;
     }
-    /**
-     * Editor darcu - pridanie, úprava a zmazanie (scenáre Darca/C, U, D).
-     * Eviduje osobné a kontaktné údaje, pohlavie, krvnú skupinu, preferovaný typ odberu,
-     * všeobecnú spôsobilosť na darovanie (pri nespôsobilosti s dôvodom) a zoznam termínov.
-     * Registračné číslo darcu sa pri novej registrácii prideľuje automaticky a je nemenné.
-     */
     interface HTMLCv2xvancoaBloodDonorsEditorElement extends Components.Cv2xvancoaBloodDonorsEditor, HTMLStencilElement {
         addEventListener<K extends keyof HTMLCv2xvancoaBloodDonorsEditorElementEventMap>(type: K, listener: (this: HTMLCv2xvancoaBloodDonorsEditorElement, ev: Cv2xvancoaBloodDonorsEditorCustomEvent<HTMLCv2xvancoaBloodDonorsEditorElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
         addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
@@ -125,12 +113,6 @@ declare namespace LocalJSX {
         "basePath"?: string;
         "siteId"?: string;
     }
-    /**
-     * Editor darcu - pridanie, úprava a zmazanie (scenáre Darca/C, U, D).
-     * Eviduje osobné a kontaktné údaje, pohlavie, krvnú skupinu, preferovaný typ odberu,
-     * všeobecnú spôsobilosť na darovanie (pri nespôsobilosti s dôvodom) a zoznam termínov.
-     * Registračné číslo darcu sa pri novej registrácii prideľuje automaticky a je nemenné.
-     */
     interface Cv2xvancoaBloodDonorsEditor {
         "apiBase"?: string;
         "entryId"?: string;
@@ -179,12 +161,6 @@ declare module "@stencil/core" {
              * zoznam darcov alebo editor konkrétneho darcu - funguje ako jednoduchý router.
              */
             "cv2xvancoa-blood-donors": LocalJSX.IntrinsicElements["cv2xvancoa-blood-donors"] & JSXBase.HTMLAttributes<HTMLCv2xvancoaBloodDonorsElement>;
-            /**
-             * Editor darcu - pridanie, úprava a zmazanie (scenáre Darca/C, U, D).
-             * Eviduje osobné a kontaktné údaje, pohlavie, krvnú skupinu, preferovaný typ odberu,
-             * všeobecnú spôsobilosť na darovanie (pri nespôsobilosti s dôvodom) a zoznam termínov.
-             * Registračné číslo darcu sa pri novej registrácii prideľuje automaticky a je nemenné.
-             */
             "cv2xvancoa-blood-donors-editor": LocalJSX.IntrinsicElements["cv2xvancoa-blood-donors-editor"] & JSXBase.HTMLAttributes<HTMLCv2xvancoaBloodDonorsEditorElement>;
             /**
              * Zoznam registrovaných darcov pre pracovníka transfúznej stanice (scenár Darca/R).

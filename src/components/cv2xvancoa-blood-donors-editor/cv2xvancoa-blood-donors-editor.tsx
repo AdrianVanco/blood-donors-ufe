@@ -1,4 +1,4 @@
-import { Component, Host, Prop, State, h, EventEmitter, Event } from '@stencil/core';
+import { Component, Host, Prop, State, h, EventEmitter, Event, Watch } from '@stencil/core';
 import { DonorsApi, Donor, Donation, Configuration } from '../../api/blood-donors';
 
 const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "0+", "0-"];
@@ -8,25 +8,36 @@ const SEX_OPTIONS = [
   { code: "F", label: "Žena" },
 ];
 
-// Preferred donation type of the donor (profile-level preference)
+// Preferovaný typ odberu darcu (profilová preferencia)
 const PREFERRED_TYPES = [
   { code: "blood", label: "Krv" },
   { code: "plasma", label: "Krvná plazma" },
   { code: "both", label: "Oboje" },
 ];
 
-// Concrete donation types used for individual appointments (termíny)
+// Konkrétne typy odberov pri jednotlivých termínoch
 const DONATION_TYPES = [
   { code: "blood", value: "Darovanie krvi" },
   { code: "plasma", value: "Darovanie krvnej plazmy" },
 ];
 
-/**
- * Editor darcu - pridanie, úprava a zmazanie (scenáre Darca/C, U, D).
- * Eviduje osobné a kontaktné údaje, pohlavie, krvnú skupinu, preferovaný typ odberu,
- * všeobecnú spôsobilosť na darovanie (pri nespôsobilosti s dôvodom) a zoznam termínov.
- * Registračné číslo darcu sa pri novej registrácii prideľuje automaticky a je nemenné.
- */
+// Obmedzenia podľa NTS SR (https://www.ntssr.sk/web/o_darovani_krvi/typy_odberov).
+// intervalDays = minimálny odstup medzi dvoma odbermi daného typu.
+const DONATION_LIMITS: { [code: string]: { label: string; intervalDays: number } } = {
+  blood: { label: "Darovanie krvi", intervalDays: 70 },   // min. ~10 týždňov
+  plasma: { label: "Darovanie krvnej plazmy", intervalDays: 14 }, // 1× za 2 týždne
+};
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Stavy termínu - postupný tok riadený tlačidlami:
+// Rezervácia dokončená -> (prehliadka) Spôsobilý -> Odber dokončený
+//                       \-> Nespôsobilý      \-> (kedykoľvek) Zrušená rezervácia
+const ST_BOOKED = "Rezervácia dokončená";
+const ST_ELIGIBLE = "Spôsobilý - čaká na odber";
+const ST_DONE = "Odber dokončený";
+const ST_INELIGIBLE = "Nespôsobilý";
+const ST_CANCELLED = "Zrušená rezervácia";
+
 @Component({
   tag: 'cv2xvancoa-blood-donors-editor',
   styleUrl: 'cv2xvancoa-blood-donors-editor.css',
@@ -43,10 +54,10 @@ export class Cv2xvancoaBloodDonorsEditor {
   @State() errorMessage: string;
   @State() isValid: boolean;
 
-  // inputs for adding a new appointment (termín)
+  // vstupy pre pridanie nového termínu
   @State() newTerminType: string = "blood";
   @State() newTerminDate: string = "";
-  @State() newTerminStatus: string = "Rezervácia dokončená";
+  @State() newTerminNote: string = "";
 
   private formElement: HTMLFormElement;
 
@@ -54,16 +65,23 @@ export class Cv2xvancoaBloodDonorsEditor {
     this.getDonorAsync();
   }
 
+  // ak sa zmení id darcu (znovupoužitý element), načítame správneho darcu
+  @Watch('entryId')
+  onEntryIdChanged() {
+    this.errorMessage = undefined;
+    this.getDonorAsync();
+  }
+
   private get isNew(): boolean {
     return this.entryId === "@new";
   }
 
-  // generates a new registration number for a freshly registered donor
+  // pri novej registrácii sa pridelí nové registračné číslo
   private generateDonorId(): string {
     return String(Date.now());
   }
 
-  private async getDonorAsync(): Promise<Donor> {
+  private async getDonorAsync(): Promise<void> {
     if (this.entryId === "@new") {
       this.isValid = false;
       this.entry = {
@@ -75,31 +93,41 @@ export class Cv2xvancoaBloodDonorsEditor {
         registeredSince: new Date(Date.now()),
         donations: [],
       };
-      return this.entry;
+      return;
     }
     if (!this.entryId) {
       this.isValid = false;
-      return undefined
+      return;
     }
     try {
-      const configuration = new Configuration({
-        basePath: this.apiBase,
-      });
-
+      const configuration = new Configuration({ basePath: this.apiBase });
       const donorsApi = new DonorsApi(configuration);
 
-      const response = await donorsApi.getDonorRaw({ siteId: this.siteId, entryId: this.entryId });
+      // Pozn.: dev mock vracia pre detail vždy ten istý príklad, preto ak sa id
+      // nezhoduje, načítame darcu zo zoznamu (funguje s mockom aj reálnym backendom).
+      let donor: Donor | undefined;
+      try {
+        const single = await donorsApi.getDonor({ siteId: this.siteId, entryId: this.entryId });
+        if (single && single.id === this.entryId) {
+          donor = single;
+        }
+      } catch (e) {
+        // ignorujeme - skúsime cez zoznam
+      }
+      if (!donor) {
+        const all = await donorsApi.getDonors({ siteId: this.siteId });
+        donor = (all || []).find(d => d.id === this.entryId);
+      }
 
-      if (response.raw.status < 299) {
-        this.entry = await response.value();
+      if (donor) {
+        this.entry = donor;
         this.isValid = true;
       } else {
-        this.errorMessage = `Cannot retrieve donor: ${response.raw.statusText}`
+        this.errorMessage = "Darcu sa nepodarilo načítať.";
       }
     } catch (err: any) {
-      this.errorMessage = `Cannot retrieve donor: ${err.message || "unknown"}`
+      this.errorMessage = `Cannot retrieve donor: ${err.message || "unknown"}`;
     }
-    return undefined;
   }
 
   render() {
@@ -155,6 +183,7 @@ export class Cv2xvancoaBloodDonorsEditor {
           </md-filled-text-field>
         </form>
 
+        {this.renderLimits()}
         {this.renderTermini()}
 
         <md-divider></md-divider>
@@ -231,14 +260,13 @@ export class Cv2xvancoaBloodDonorsEditor {
   }
 
   private renderEligibility() {
-    const eligible = this.entry?.eligible !== false; // default to eligible
+    const eligible = this.entry?.eligible !== false; // default spôsobilý
     return [
       <md-filled-select label="Spôsobilosť na darovanie"
         display-text={eligible ? "Spôsobilý" : "Nespôsobilý"}
         oninput={(ev: InputEvent) => {
           if (this.entry) {
             const isEligible = (ev.target as HTMLInputElement).value === "true";
-            // reassign to trigger re-render (show/hide the note field)
             this.entry = {
               ...this.entry,
               eligible: isEligible,
@@ -265,6 +293,50 @@ export class Cv2xvancoaBloodDonorsEditor {
     ];
   }
 
+  // Prehľad pre pracovníka: do limitov sa rátajú len uskutočnené odbery (Odber dokončený).
+  private renderLimits() {
+    const donations = (this.entry?.donations || []).filter(d => d.date && d.status === ST_DONE);
+    if (donations.length === 0) {
+      return undefined;
+    }
+    const now = Date.now();
+    const thisYear = new Date().getFullYear();
+    const annualCap = this.entry?.sex === "F" ? 3 : 4; // celá krv: ženy 3×, muži 4× za rok
+
+    const rows = Object.keys(DONATION_LIMITS).map(code => {
+      const limit = DONATION_LIMITS[code];
+      const ofType = donations.filter(d => d.donationType?.code === code);
+      if (ofType.length === 0) {
+        return undefined;
+      }
+      const lastTime = Math.max(...ofType.map(d => new Date(d.date!).getTime()));
+      const nextEligible = lastTime + limit.intervalDays * DAY_MS;
+      const tooSoon = nextEligible > now;
+      const countThisYear = ofType.filter(d => new Date(d.date!).getFullYear() === thisYear).length;
+      return (
+        <div class={"limit-row" + (tooSoon ? " too-soon" : "")}>
+          <div class="limit-type">{limit.label}</div>
+          <div class="limit-detail">Počet odberov: {ofType.length}
+            {code === "blood" ? ` (tento rok ${countThisYear}/${annualCap})` : ""}</div>
+          <div class="limit-detail">Posledný odber: {new Date(lastTime).toLocaleDateString()}</div>
+          <div class="limit-detail">
+            Najskôr ďalší možný: {tooSoon ? new Date(nextEligible).toLocaleDateString() : "možný teraz"}
+          </div>
+        </div>
+      );
+    }).filter(r => r !== undefined);
+
+    if (rows.length === 0) {
+      return undefined;
+    }
+    return (
+      <div class="limits">
+        <h3>Prehľad odberov a limitov</h3>
+        {rows}
+      </div>
+    );
+  }
+
   private renderTermini() {
     const donations = (this.entry?.donations || [])
       .slice()
@@ -276,12 +348,18 @@ export class Cv2xvancoaBloodDonorsEditor {
           ? <div class="termini-empty">Zatiaľ žiadne termíny.</div>
           : <md-list>
             {donations.map(donation =>
-              <md-list-item>
+              <md-list-item class={this.terminClass(donation.status)}>
                 <md-icon slot="start">bloodtype</md-icon>
                 <div slot="headline">{donation.donationType?.value ?? "Darovanie krvi"}</div>
                 <div slot="supporting-text">
-                  {(donation.date ? new Date(donation.date).toLocaleString() : "") +
-                    (donation.status ? " · " + donation.status : "")}
+                  {[
+                    donation.date ? new Date(donation.date).toLocaleString() : "",
+                    donation.status,
+                    donation.note,
+                  ].filter(Boolean).join(" · ")}
+                </div>
+                <div slot="end" class="termin-actions">
+                  {this.terminActions(donation)}
                 </div>
               </md-list-item>
             )}
@@ -302,17 +380,77 @@ export class Cv2xvancoaBloodDonorsEditor {
             value={this.newTerminDate}
             oninput={(ev: InputEvent) => this.newTerminDate = (ev.target as HTMLInputElement).value}>
           </md-filled-text-field>
-          <md-filled-text-field label="Stav pacienta"
-            value={this.newTerminStatus}
-            oninput={(ev: InputEvent) => this.newTerminStatus = (ev.target as HTMLInputElement).value}>
+          <md-filled-text-field label="Poznámka (nepovinné)"
+            value={this.newTerminNote}
+            oninput={(ev: InputEvent) => this.newTerminNote = (ev.target as HTMLInputElement).value}>
+            <md-icon slot="leading-icon">edit_note</md-icon>
           </md-filled-text-field>
           <md-outlined-button onClick={() => this.addTermin()}>
             <md-icon slot="icon">add</md-icon>
-            Pridať termín
+            Rezervovať termín
           </md-outlined-button>
         </div>
       </div>
     );
+  }
+
+  private terminClass(status?: string): string {
+    if (status === ST_CANCELLED || status === ST_INELIGIBLE) {
+      return "cancelled";
+    }
+    return "";
+  }
+
+  // Tlačidlá na posun stavu termínu podľa aktuálneho stavu.
+  // Tlačidlo "Späť" umožní opraviť preklik (vráti termín na začiatok toku).
+  private terminActions(donation: Donation) {
+    const back = (
+      <md-outlined-button onClick={() => this.advanceStatus(donation, ST_BOOKED)}>
+        <md-icon slot="icon">undo</md-icon>
+        Späť
+      </md-outlined-button>
+    );
+    switch (donation.status) {
+      case ST_BOOKED:
+        return [
+          <md-outlined-button onClick={() => this.advanceStatus(donation, ST_ELIGIBLE)}>Spôsobilý</md-outlined-button>,
+          <md-outlined-button onClick={() => this.markIneligible(donation)}>Nespôsobilý</md-outlined-button>,
+          <md-outlined-button onClick={() => this.advanceStatus(donation, ST_CANCELLED)}>Zrušiť</md-outlined-button>,
+        ];
+      case ST_ELIGIBLE:
+        return [
+          <md-outlined-button onClick={() => this.advanceStatus(donation, ST_DONE)}>Odber dokončený</md-outlined-button>,
+          <md-outlined-button onClick={() => this.advanceStatus(donation, ST_CANCELLED)}>Zrušiť</md-outlined-button>,
+          back,
+        ];
+      default:
+        // ST_DONE, ST_INELIGIBLE, ST_CANCELLED - terminálne stavy: umožníme opravu prekliku
+        return [back];
+    }
+  }
+
+  private advanceStatus(target: Donation, status: string, note?: string) {
+    if (!this.entry) {
+      return;
+    }
+    this.entry = {
+      ...this.entry,
+      donations: (this.entry.donations || []).map(d =>
+        d === target ? { ...d, status, note: note !== undefined ? note : d.note } : d),
+    };
+  }
+
+  // pri nespôsobilosti sa zaznamená dôvod (povinný)
+  private markIneligible(target: Donation) {
+    let reason = window.prompt("Dôvod nespôsobilosti (povinné):", target.note || "");
+    // ak používateľ potvrdí prázdny dôvod, pýtame sa znova
+    while (reason !== null && reason.trim() === "") {
+      reason = window.prompt("Dôvod nespôsobilosti je povinný. Zadajte dôvod:", "");
+    }
+    if (reason === null) {
+      return; // používateľ zrušil
+    }
+    this.advanceStatus(target, ST_INELIGIBLE, reason.trim());
   }
 
   private addTermin() {
@@ -323,14 +461,15 @@ export class Cv2xvancoaBloodDonorsEditor {
     const donation: Donation = {
       date: new Date(this.newTerminDate),
       donationType: type ? { code: type.code, value: type.value } : undefined,
-      status: this.newTerminStatus || "Rezervácia dokončená",
+      status: ST_BOOKED,
+      note: this.newTerminNote || undefined,
     };
     this.entry = {
       ...this.entry,
       donations: [...(this.entry.donations || []), donation],
     };
     this.newTerminDate = "";
-    this.newTerminStatus = "Rezervácia dokončená";
+    this.newTerminNote = "";
   }
 
   private handleInputEvent(ev: InputEvent): string {
@@ -340,7 +479,6 @@ export class Cv2xvancoaBloodDonorsEditor {
   }
 
   private validateForm(mode: 'silent' | 'show-errors'): boolean {
-    // check validity of elements
     this.isValid = true;
     for (let i = 0; i < this.formElement.children.length; i++) {
       const element = this.formElement.children[i] as HTMLElement & {
@@ -365,10 +503,7 @@ export class Cv2xvancoaBloodDonorsEditor {
     }
 
     try {
-      const configuration = new Configuration({
-        basePath: this.apiBase,
-      });
-
+      const configuration = new Configuration({ basePath: this.apiBase });
       const donorsApi = new DonorsApi(configuration);
 
       const response = this.entryId == "@new" ?
@@ -387,10 +522,7 @@ export class Cv2xvancoaBloodDonorsEditor {
 
   private async deleteEntry() {
     try {
-      const configuration = new Configuration({
-        basePath: this.apiBase,
-      });
-
+      const configuration = new Configuration({ basePath: this.apiBase });
       const donorsApi = new DonorsApi(configuration);
 
       const response = await donorsApi.deleteDonorRaw({ siteId: this.siteId, entryId: this.entryId });
