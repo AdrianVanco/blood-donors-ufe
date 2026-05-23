@@ -75,6 +75,12 @@ export interface Donor {
      */
     preferredDonationType?: string;
     /**
+     * Preferred donation site (id) of the donor
+     * @type {string}
+     * @memberof Donor
+     */
+    preferredSite?: string;
+    /**
      * Whether the donor is generally eligible to donate (spôsobilý / nespôsobilý)
      * @type {boolean}
      * @memberof Donor
@@ -136,6 +142,7 @@ export function DonorFromJSONTyped(json: any, ignoreDiscriminator: boolean): Don
         'email': !exists(json, 'email') ? undefined : json['email'],
         'phone': !exists(json, 'phone') ? undefined : json['phone'],
         'preferredDonationType': !exists(json, 'preferredDonationType') ? undefined : json['preferredDonationType'],
+        'preferredSite': !exists(json, 'preferredSite') ? undefined : json['preferredSite'],
         'eligible': !exists(json, 'eligible') ? undefined : json['eligible'],
         'eligibilityNote': !exists(json, 'eligibilityNote') ? undefined : json['eligibilityNote'],
         'registeredSince': (new Date(json['registeredSince'])),
@@ -161,6 +168,7 @@ export function DonorToJSON(value?: Donor | null): any {
         'email': value.email,
         'phone': value.phone,
         'preferredDonationType': value.preferredDonationType,
+        'preferredSite': value.preferredSite,
         'eligible': value.eligible,
         'eligibilityNote': value.eligibilityNote,
         'registeredSince': (value.registeredSince.toISOString()),

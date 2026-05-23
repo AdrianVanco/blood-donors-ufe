@@ -1,11 +1,6 @@
 import { Component, Host, Prop, State, h } from '@stencil/core';
-
-// Odberné miesta (zatiaľ statický zoznam; neskôr z API / DonationSite)
-const SITES = [
-  { id: "bratislava-bory", name: "Bratislava Bory" },
-  { id: "bratislava-ruzinov", name: "Bratislava Ružinov" },
-  { id: "malacky", name: "Malacky" },
-];
+import { DONATION_SITES as SITES } from '../../global/sites';
+import { DonorsApi, Configuration } from '../../api/blood-donors';
 
 const MONTHS = ["Január", "Február", "Marec", "Apríl", "Máj", "Jún",
   "Júl", "August", "September", "Október", "November", "December"];
@@ -29,6 +24,8 @@ function bloodSlots(): string[] {
 export class Cv2xvancoaBloodDonorsCalendar {
   @Prop() apiBase: string;
   @Prop() siteId: string;
+  // ktorý darca je "prihlásený" (zatiaľ bez auth - default prvý darca)
+  @Prop() donorId: string;
 
   @State() type: 'blood' | 'plasma' = 'blood';
   @State() site: string;
@@ -37,8 +34,25 @@ export class Cv2xvancoaBloodDonorsCalendar {
   @State() selectedSlot: string | null = null;
   @State() notice: string | null = null;
 
-  componentWillLoad() {
+  async componentWillLoad() {
     this.site = this.siteId || SITES[0].id;
+    // predvyplníme podľa preferencií "prihláseného" darcu (zatiaľ bez auth - prvý darca)
+    try {
+      const configuration = new Configuration({ basePath: this.apiBase });
+      const all = await new DonorsApi(configuration).getDonors({ siteId: this.siteId });
+      const me = all && all.length > 0
+        ? (this.donorId ? all.find(d => d.donorId === this.donorId || d.id === this.donorId) || all[0] : all[0])
+        : undefined;
+      if (me) {
+        if (me.preferredSite && SITES.some(s => s.id === me.preferredSite)) {
+          this.site = me.preferredSite;
+        }
+        // preferovaný typ: plazma -> plazma; krv aj "oboje" -> krv (default)
+        this.type = me.preferredDonationType === 'plasma' ? 'plasma' : 'blood';
+      }
+    } catch (e) {
+      // ponecháme predvolené hodnoty
+    }
   }
 
   private setType(type: 'blood' | 'plasma') {

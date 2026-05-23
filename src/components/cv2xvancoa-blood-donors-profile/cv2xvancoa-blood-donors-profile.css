@@ -1,0 +1,56 @@
+:host {
+  display: block;
+  width: 100%;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+h2 {
+  margin: 0.5rem 0;
+}
+
+.name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  max-width: 28rem;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.25rem;
+}
+
+.label {
+  opacity: 0.7;
+}
+
+md-divider {
+  margin: 1.5rem 0 1rem;
+}
+
+.empty {
+  opacity: 0.7;
+}
+
+.error {
+  color: red;
+  text-align: center;
+  font-weight: 700;
+  padding: 1rem;
+}
+
+.loading {
+  opacity: 0.7;
+  padding: 1rem;
+}

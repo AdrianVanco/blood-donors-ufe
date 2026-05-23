@@ -260,6 +260,10 @@ components:
           example: blood
           description: 'Preferred donation type: blood (krv), plasma (krvná plazma) or both (oboje)'
           enum: ["blood", "plasma", "both"]
+        preferredSite:
+          type: string
+          example: bratislava-bory
+          description: Preferred donation site (id) of the donor
         eligible:
           type: boolean
           example: true
@@ -366,6 +370,7 @@ components:
         email: vancoadrian7@gmail.com
         phone: "+421917529741"
         preferredDonationType: blood
+        preferredSite: bratislava-bory
         eligible: true
         registeredSince: "2026-05-20T09:00:00.000Z"
         appointmentStart: "2026-06-29T08:30:00.000Z"
@@ -388,6 +393,7 @@ components:
           email: vancoadrian7@gmail.com
           phone: "+421917529741"
           preferredDonationType: blood
+          preferredSite: bratislava-bory
           eligible: true
           registeredSince: "2026-05-20T09:00:00.000Z"
           appointmentStart: "2026-06-29T08:30:00.000Z"
@@ -403,6 +409,7 @@ components:
           email: jana.novakova@example.com
           phone: "+421900111222"
           preferredDonationType: plasma
+          preferredSite: malacky
           eligible: false
           eligibilityNote: Chronické ochorenie, darovanie nie je možné
           registeredSince: "2026-05-21T10:00:00.000Z"

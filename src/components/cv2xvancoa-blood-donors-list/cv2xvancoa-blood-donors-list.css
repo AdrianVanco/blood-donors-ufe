@@ -6,6 +6,17 @@
   padding-bottom: 2rem;
 }
 
+.search {
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.empty {
+  padding: 1rem;
+  text-align: center;
+  opacity: 0.7;
+}
+
 .error {
   margin: auto;
   color: red;

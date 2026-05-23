@@ -1,5 +1,6 @@
 import { Component, Host, Prop, State, h, EventEmitter, Event, Watch } from '@stencil/core';
 import { DonorsApi, Donor, Donation, Configuration } from '../../api/blood-donors';
+import { DONATION_SITES } from '../../global/sites';
 
 const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "0+", "0-"];
 
@@ -47,6 +48,8 @@ export class Cv2xvancoaBloodDonorsEditor {
   @Prop() entryId: string;
   @Prop() siteId: string;
   @Prop() apiBase: string;
+  // "worker" = plný editor pracovníka, "donor" = obmedzený self-edit darcu
+  @Prop() mode: string = "worker";
 
   @Event({ eventName: "editor-closed" }) editorClosed: EventEmitter<string>;
 
@@ -76,6 +79,11 @@ export class Cv2xvancoaBloodDonorsEditor {
     return this.entryId === "@new";
   }
 
+  // darca smie meniť len e-mail, telefón a preferovaný typ odberu
+  private get isDonorMode(): boolean {
+    return this.mode === "donor";
+  }
+
   // pri novej registrácii sa pridelí nové registračné číslo
   private generateDonorId(): string {
     return String(Date.now());
@@ -90,6 +98,7 @@ export class Cv2xvancoaBloodDonorsEditor {
         sex: "M",
         eligible: true,
         preferredDonationType: "blood",
+        preferredSite: this.siteId || DONATION_SITES[0].id,
         registeredSince: new Date(Date.now()),
         donations: [],
       };
@@ -155,8 +164,8 @@ export class Cv2xvancoaBloodDonorsEditor {
             <md-icon slot="leading-icon">fingerprint</md-icon>
           </md-filled-text-field>
 
-          {this.renderSex()}
-          {this.renderBloodType()}
+          {this.isDonorMode ? undefined : this.renderSex()}
+          {this.isDonorMode ? undefined : this.renderBloodType()}
 
           <md-filled-text-field label="E-mail" type="email"
             value={this.entry?.email}
@@ -175,7 +184,8 @@ export class Cv2xvancoaBloodDonorsEditor {
           </md-filled-text-field>
 
           {this.renderPreferredType()}
-          {this.renderEligibility()}
+          {this.renderPreferredSite()}
+          {this.isDonorMode ? undefined : this.renderEligibility()}
 
           <md-filled-text-field label="Registrovaný od" disabled
             value={new Date(this.entry?.registeredSince || Date.now()).toLocaleDateString()}>
@@ -259,6 +269,23 @@ export class Cv2xvancoaBloodDonorsEditor {
     );
   }
 
+  private renderPreferredSite() {
+    return (
+      <md-filled-select label="Preferované odberné miesto"
+        display-text={DONATION_SITES.find(s => s.id === this.entry?.preferredSite)?.name}
+        oninput={(ev: InputEvent) => {
+          if (this.entry) { this.entry.preferredSite = (ev.target as HTMLInputElement).value }
+        }}>
+        <md-icon slot="leading-icon">place</md-icon>
+        {DONATION_SITES.map(s => (
+          <md-select-option value={s.id} selected={s.id === this.entry?.preferredSite}>
+            <div slot="headline">{s.name}</div>
+          </md-select-option>
+        ))}
+      </md-filled-select>
+    );
+  }
+
   private renderEligibility() {
     const eligible = this.entry?.eligible !== false; // default spôsobilý
     return [
@@ -295,6 +322,9 @@ export class Cv2xvancoaBloodDonorsEditor {
 
   // Prehľad pre pracovníka: do limitov sa rátajú len uskutočnené odbery (Odber dokončený).
   private renderLimits() {
+    if (this.isDonorMode) {
+      return undefined; // prehľad limitov je nástroj pracovníka
+    }
     const donations = (this.entry?.donations || []).filter(d => d.date && d.status === ST_DONE);
     if (donations.length === 0) {
       return undefined;
@@ -366,6 +396,7 @@ export class Cv2xvancoaBloodDonorsEditor {
           </md-list>
         }
 
+        {this.isDonorMode ? undefined :
         <div class="add-termin">
           <md-filled-select label="Typ odberu"
             display-text={DONATION_TYPES.find(t => t.code === this.newTerminType)?.value}
@@ -389,7 +420,7 @@ export class Cv2xvancoaBloodDonorsEditor {
             <md-icon slot="icon">add</md-icon>
             Rezervovať termín
           </md-outlined-button>
-        </div>
+        </div>}
       </div>
     );
   }
@@ -404,6 +435,9 @@ export class Cv2xvancoaBloodDonorsEditor {
   // Tlačidlá na posun stavu termínu podľa aktuálneho stavu.
   // Tlačidlo "Späť" umožní opraviť preklik (vráti termín na začiatok toku).
   private terminActions(donation: Donation) {
+    if (this.isDonorMode) {
+      return undefined; // darca termíny nespravuje, len ich vidí (rezervuje cez kalendár)
+    }
     const back = (
       <md-outlined-button onClick={() => this.advanceStatus(donation, ST_BOOKED)}>
         <md-icon slot="icon">undo</md-icon>

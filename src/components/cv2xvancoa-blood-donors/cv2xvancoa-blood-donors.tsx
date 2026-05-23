@@ -44,12 +44,20 @@ export class Cv2xvancoaBloodDonors {
     console.debug("cv2xvancoa-blood-donors.render() - path: %s", this.relativePath);
     let element = "list"
     let entryId = "@new"
+    let editorMode = "worker"
 
     if (this.relativePath.startsWith("entry/")) {
       element = "editor";
       entryId = this.relativePath.split("/")[1]
+    } else if (this.relativePath.startsWith("self/")) {
+      // darca upravuje vlastný profil - obmedzený editor
+      element = "editor";
+      entryId = this.relativePath.split("/")[1];
+      editorMode = "donor";
     } else if (this.relativePath.startsWith("calendar")) {
       element = "calendar";
+    } else if (this.relativePath.startsWith("profile")) {
+      element = "profile";
     }
 
     const navigate = (path: string) => {
@@ -69,20 +77,28 @@ export class Cv2xvancoaBloodDonors {
               <md-icon slot="icon">groups</md-icon>
               Darcovia
             </md-outlined-button>
+            <md-outlined-button onClick={() => navigate("./profile")}>
+              <md-icon slot="icon">account_circle</md-icon>
+              Môj účet
+            </md-outlined-button>
           </nav>
           : undefined}
 
         {element === "editor"
-          ? <cv2xvancoa-blood-donors-editor entry-id={entryId}
+          ? <cv2xvancoa-blood-donors-editor entry-id={entryId} mode={editorMode}
             site-id={this.siteId} api-base={this.apiBase}
-            oneditor-closed={() => navigate("./list")} >
+            oneditor-closed={() => navigate(editorMode === "donor" ? "./profile" : "./list")} >
           </cv2xvancoa-blood-donors-editor>
           : element === "calendar"
             ? <cv2xvancoa-blood-donors-calendar site-id={this.siteId} api-base={this.apiBase}>
             </cv2xvancoa-blood-donors-calendar>
-            : <cv2xvancoa-blood-donors-list site-id={this.siteId} api-base={this.apiBase}
-              onentry-clicked={(ev: CustomEvent<string>) => navigate("./entry/" + ev.detail)} >
-            </cv2xvancoa-blood-donors-list>
+            : element === "profile"
+              ? <cv2xvancoa-blood-donors-profile site-id={this.siteId} api-base={this.apiBase}
+                onedit-profile={(ev: CustomEvent<string>) => navigate("./self/" + ev.detail)}>
+              </cv2xvancoa-blood-donors-profile>
+              : <cv2xvancoa-blood-donors-list site-id={this.siteId} api-base={this.apiBase}
+                onentry-clicked={(ev: CustomEvent<string>) => navigate("./entry/" + ev.detail)} >
+              </cv2xvancoa-blood-donors-list>
         }
 
       </Host>

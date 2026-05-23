@@ -16,6 +16,7 @@ export class Cv2xvancoaBloodDonorsList {
   @Prop() apiBase: string;
   @Prop() siteId: string;
   @State() errorMessage: string;
+  @State() searchTerm: string = "";
 
   donors: Donor[];
 
@@ -56,21 +57,41 @@ export class Cv2xvancoaBloodDonorsList {
     return text;
   }
 
+  // filtrovanie podľa mena alebo registračného čísla
+  private filteredDonors(): Donor[] {
+    const term = (this.searchTerm || "").trim().toLowerCase();
+    const all = this.donors || [];
+    if (!term) {
+      return all;
+    }
+    return all.filter(d =>
+      (d.name || "").toLowerCase().includes(term) ||
+      (d.donorId || "").toLowerCase().includes(term));
+  }
+
   render() {
+    const donors = this.filteredDonors();
     return (
       <Host>
+        <md-filled-text-field class="search" label="Hľadať darcu (meno alebo reg. číslo)"
+          value={this.searchTerm}
+          oninput={(ev: InputEvent) => this.searchTerm = (ev.target as HTMLInputElement).value}>
+          <md-icon slot="leading-icon">search</md-icon>
+        </md-filled-text-field>
+
         {this.errorMessage
           ? <div class="error">{this.errorMessage}</div>
-          :
-          <md-list>
-            {this.donors.map((donor) =>
-              <md-list-item onClick={() => this.entryClicked.emit(donor.id)}>
-                <div slot="headline">{donor.name}</div>
-                <div slot="supporting-text">{this.donorSummary(donor)}</div>
-                <md-icon slot="start">bloodtype</md-icon>
-              </md-list-item>
-            )}
-          </md-list>
+          : donors.length === 0
+            ? <div class="empty">Žiadny darca nevyhovuje hľadaniu.</div>
+            : <md-list>
+              {donors.map((donor) =>
+                <md-list-item onClick={() => this.entryClicked.emit(donor.id)}>
+                  <div slot="headline">{donor.name}</div>
+                  <div slot="supporting-text">{this.donorSummary(donor)}</div>
+                  <md-icon slot="start">bloodtype</md-icon>
+                </md-list-item>
+              )}
+            </md-list>
         }
         <md-filled-icon-button class="add-button"
           onclick={() => this.entryClicked.emit("@new")}>
