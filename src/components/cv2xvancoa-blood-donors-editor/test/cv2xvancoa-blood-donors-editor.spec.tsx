@@ -49,7 +49,7 @@ describe('cv2xvancoa-blood-donors-editor', () => {
 
     const page = await newSpecPage({
       components: [Cv2xvancoaBloodDonorsEditor],
-      html: `<cv2xvancoa-blood-donors-editor entry-id="test-entry" site-id="test-ambulance" api-base="http://sample.test/api"></cv2xvancoa-blood-donors-editor>`,
+      html: `<cv2xvancoa-blood-donors-editor entry-id="entry-1" site-id="test-ambulance" api-base="http://sample.test/api"></cv2xvancoa-blood-donors-editor>`,
     });
 
     await delay(300);
@@ -68,7 +68,7 @@ describe('cv2xvancoa-blood-donors-editor', () => {
 
     const page = await newSpecPage({
       components: [Cv2xvancoaBloodDonorsEditor],
-      html: `<cv2xvancoa-blood-donors-editor entry-id="test-entry" site-id="test-ambulance" api-base="http://sample.test/api"></cv2xvancoa-blood-donors-editor>`,
+      html: `<cv2xvancoa-blood-donors-editor entry-id="entry-1" site-id="test-ambulance" api-base="http://sample.test/api"></cv2xvancoa-blood-donors-editor>`,
     });
 
     await delay(300);
