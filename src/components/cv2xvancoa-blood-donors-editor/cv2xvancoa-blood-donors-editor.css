@@ -186,9 +186,17 @@ form {
 /* zoznam termínov zladený s témou */
 .termini md-list {
   --md-list-container-color: transparent;
-  --md-list-item-leading-icon-color: var(--blood);
   --md-list-item-label-text-color: var(--navy);
   --md-list-item-supporting-text-color: #51607d;
+}
+
+/* farba ikony podľa typu odberu */
+.type-icon.blood {
+  color: var(--blood);
+}
+
+.type-icon.plasma {
+  color: #f0a500;
 }
 
 /* oddeľovač medzi termínmi */
@@ -366,6 +374,11 @@ md-dialog [slot="actions"] .danger {
   --md-filled-tonal-button-container-color: #fbe3e6;
   --md-filled-tonal-button-label-text-color: var(--blood);
   --md-filled-tonal-button-icon-color: var(--blood);
+  --md-filled-tonal-button-hover-label-text-color: var(--blood);
+  --md-filled-tonal-button-hover-icon-color: var(--blood);
+  --md-filled-tonal-button-hover-state-layer-color: var(--blood);
+  --md-filled-tonal-button-pressed-state-layer-color: var(--blood);
+  --md-filled-tonal-button-focus-label-text-color: var(--blood);
 }
 
 /* polia pri pridávaní termínu zladené s navy témou */

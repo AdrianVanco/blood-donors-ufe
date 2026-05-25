@@ -24,11 +24,16 @@ export namespace Components {
     interface Cv2xvancoaBloodDonorsCalendar {
         "apiBase"?: string;
         "donations"?: Donation[];
+        /**
+          * @default true
+         */
+        "donorEligible"?: boolean;
         "donorId"?: string;
         /**
           * @default false
          */
         "pickerMode"?: boolean;
+        "preselectType"?: string;
         "sex"?: string;
         "siteId"?: string;
     }
@@ -192,12 +197,17 @@ declare namespace LocalJSX {
     interface Cv2xvancoaBloodDonorsCalendar {
         "apiBase"?: string;
         "donations"?: Donation[];
+        /**
+          * @default true
+         */
+        "donorEligible"?: boolean;
         "donorId"?: string;
         "onSlot-selected"?: (event: Cv2xvancoaBloodDonorsCalendarCustomEvent<{ date: Date; time: string; type: string }>) => void;
         /**
           * @default false
          */
         "pickerMode"?: boolean;
+        "preselectType"?: string;
         "sex"?: string;
         "siteId"?: string;
     }
@@ -245,6 +255,8 @@ declare namespace LocalJSX {
         "donorId": string;
         "pickerMode": boolean;
         "sex": string;
+        "donorEligible": boolean;
+        "preselectType": string;
     }
     interface Cv2xvancoaBloodDonorsEditorAttributes {
         "entryId": string;

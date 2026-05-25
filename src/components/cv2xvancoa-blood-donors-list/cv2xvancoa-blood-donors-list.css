@@ -24,6 +24,34 @@
   margin: 0 0 1.25rem;
 }
 
+/* prepínač typu odberu (ovplyvňuje stav "môže darovať" a otvorený kalendár) */
+.type-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.type-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: #eee;
+  color: #777;
+}
+
+.type-btn.blood.active {
+  background: var(--blood);
+  color: #fff;
+}
+
+.type-btn.plasma.active {
+  background: #f0a500;
+  color: #fff;
+}
+
 .search {
   width: 100%;
   margin-bottom: 0.75rem;
@@ -61,9 +89,17 @@
 /* zoznam darcov */
 md-list {
   --md-list-container-color: transparent;
-  --md-list-item-leading-icon-color: var(--blood);
   --md-list-item-label-text-color: var(--navy);
   --md-list-item-trailing-supporting-text-color: var(--navy);
+}
+
+/* farba ikony podľa zvoleného typu (krv/plazma) */
+.type-icon.blood {
+  color: var(--blood);
+}
+
+.type-icon.plasma {
+  color: #f0a500;
 }
 
 /* oddeľovač medzi darcami */
@@ -101,6 +137,28 @@ md-list-item:not(:last-of-type) {
 .elig.no {
   background: #fbf1f2;
   color: var(--blood);
+}
+
+.elig.wait {
+  background: #fff4e5;
+  color: #b26a00;
+}
+
+/* stránkovanie */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+  --md-sys-color-primary: var(--navy);
+}
+
+.pager-info {
+  font-weight: 600;
+  color: var(--navy);
+  white-space: nowrap;
 }
 
 .reserve-btn {

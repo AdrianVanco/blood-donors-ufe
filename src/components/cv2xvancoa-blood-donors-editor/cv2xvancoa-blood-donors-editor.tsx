@@ -63,6 +63,9 @@ export class Cv2xvancoaBloodDonorsEditor {
   @State() terminiOpen: boolean = true;
   // potvrdzovací dialóg pri deštruktívnych akciách
   @State() confirm: { message: string; confirmLabel: string; action: () => void } | null = null;
+  // živé chybové hlášky pri formáte kontaktu
+  @State() emailError: string = "";
+  @State() phoneError: string = "";
 
   private formElement!: HTMLFormElement;
 
@@ -97,10 +100,7 @@ export class Cv2xvancoaBloodDonorsEditor {
       this.entry = {
         id: "@new",
         donorId: this.generateDonorId(),
-        sex: "M",
         eligible: true,
-        preferredDonationType: "blood",
-        preferredSite: this.siteId || DONATION_SITES[0].id,
         registeredSince: new Date(Date.now()),
         donations: [],
       };
@@ -175,7 +175,7 @@ export class Cv2xvancoaBloodDonorsEditor {
               </md-filled-text-field>
 
               <md-filled-text-field label="Registrovaný od" readonly
-                value={new Date(this.entry?.registeredSince || Date.now()).toLocaleDateString()}>
+                value={new Date(this.entry?.registeredSince || Date.now()).toLocaleDateString("sk-SK")}>
                 <md-icon slot="leading-icon">how_to_reg</md-icon>
               </md-filled-text-field>
 
@@ -188,17 +188,21 @@ export class Cv2xvancoaBloodDonorsEditor {
             <h3 class="section-title">Kontaktné údaje</h3>
             <div class="fields">
               <md-filled-text-field label="E-mail" type="email"
+                supporting-text="Nepovinné"
+                error={!!this.emailError} error-text={this.emailError}
                 value={this.entry?.email}
                 oninput={(ev: InputEvent) => {
-                  if (this.entry) { this.entry.email = this.handleInputEvent(ev) }
+                  if (this.entry) { this.entry.email = this.handleInputEvent(ev); this.checkContact(); }
                 }}>
                 <md-icon slot="leading-icon">mail</md-icon>
               </md-filled-text-field>
 
               <md-filled-text-field label="Telefónne číslo" type="tel"
+                supporting-text="Nepovinné, napr. +421 900 123 456"
+                error={!!this.phoneError} error-text={this.phoneError}
                 value={this.entry?.phone}
                 oninput={(ev: InputEvent) => {
-                  if (this.entry) { this.entry.phone = this.handleInputEvent(ev) }
+                  if (this.entry) { this.entry.phone = this.handleInputEvent(ev); this.checkContact(); }
                 }}>
                 <md-icon slot="leading-icon">phone</md-icon>
               </md-filled-text-field>
@@ -242,7 +246,7 @@ export class Cv2xvancoaBloodDonorsEditor {
 
   private renderSex() {
     return (
-      <md-filled-select label="Pohlavie" required={this.isNew}
+      <md-filled-select label="Pohlavie" required
         display-text={SEX_OPTIONS.find(o => o.code === this.entry?.sex)?.label}
         oninput={(ev: InputEvent) => {
           if (this.entry) { this.entry.sex = (ev.target as HTMLInputElement).value }
@@ -259,7 +263,7 @@ export class Cv2xvancoaBloodDonorsEditor {
 
   private renderBloodType() {
     return (
-      <md-filled-select label="Krvná skupina" required={this.isNew}
+      <md-filled-select label="Krvná skupina" required
         display-text={this.entry?.bloodType}
         oninput={(ev: InputEvent) => {
           if (this.entry) { this.entry.bloodType = (ev.target as HTMLInputElement).value }
@@ -362,23 +366,27 @@ export class Cv2xvancoaBloodDonorsEditor {
         return undefined;
       }
       const lastTime = Math.max(...ofType.map(d => new Date(d.date!).getTime()));
-      const nextEligible = lastTime + limit.intervalDays * DAY_MS;
-      const tooSoon = nextEligible > now;
       const countThisYear = ofType.filter(d => new Date(d.date!).getFullYear() === thisYear).length;
+      // najbližší možný = neskorší z odstupu a (pri krvi) ročného limitu
+      let nextEligible = lastTime + limit.intervalDays * DAY_MS;
+      const capReached = code === "blood" && countThisYear >= annualCap;
+      if (capReached) {
+        nextEligible = Math.max(nextEligible, new Date(thisYear + 1, 0, 1).getTime());
+      }
+      const tooSoon = nextEligible > now;
       return (
         <div class={"limit-row" + (tooSoon ? " too-soon" : "")}>
           <div class="limit-head">
             <span class="limit-type">{limit.label}</span>
             <span class={"limit-status" + (tooSoon ? " soon" : " ok")}>
               {tooSoon
-                ? `Ďalší možný ${new Date(nextEligible).toLocaleDateString()}`
+                ? `Ďalší možný ${new Date(nextEligible).toLocaleDateString("sk-SK")}`
                 : "Možný teraz"}
             </span>
           </div>
           <div class="limit-meta">
-            <span>Počet odberov: {ofType.length}</span>
-            <span>{code === "blood" ? ` tento rok ${countThisYear}/${annualCap}` : ""}</span>
-            <span>Posledný: {new Date(lastTime).toLocaleDateString()}</span>
+            <span>Počet odberov: {ofType.length}{code === "blood" ? ` · tento rok ${countThisYear}/${annualCap}` : ""}</span>
+            <span>Posledný: {new Date(lastTime).toLocaleDateString("sk-SK")}</span>
           </div>
         </div>
       );
@@ -403,10 +411,12 @@ export class Cv2xvancoaBloodDonorsEditor {
       <div class="termini">
         {this.isDonorMode ? undefined :
         <div class="add-termin">
-          <md-outlined-button onClick={() => this.showCalendar = true}>
-            <md-icon slot="icon">calendar_month</md-icon>
-            Rezervovať nový termín
-          </md-outlined-button>
+          {this.entry?.eligible === false
+            ? <div class="termini-empty">Darca je nespôsobilý — termín nie je možné rezervovať.</div>
+            : <md-outlined-button onClick={() => this.showCalendar = true}>
+              <md-icon slot="icon">calendar_month</md-icon>
+              Rezervovať nový termín
+            </md-outlined-button>}
         </div>}
 
         <button type="button" class="termini-header"
@@ -421,7 +431,7 @@ export class Cv2xvancoaBloodDonorsEditor {
             : <md-list>
               {donations.map(donation =>
                 <md-list-item class={this.terminClass(donation.status)}>
-                  <md-icon slot="start">bloodtype</md-icon>
+                  <md-icon slot="start" class={"type-icon " + (donation.donationType?.code === 'plasma' ? 'plasma' : 'blood')}>bloodtype</md-icon>
                   <div slot="headline">{donation.donationType?.value ?? "Darovanie krvi"}</div>
                   <div slot="supporting-text">
                     {[
@@ -445,6 +455,7 @@ export class Cv2xvancoaBloodDonorsEditor {
               <cv2xvancoa-blood-donors-calendar picker-mode
                 site-id={this.siteId} api-base={this.apiBase}
                 donations={this.entry?.donations} sex={this.entry?.sex}
+                donor-eligible={this.entry?.eligible !== false}
                 onslot-selected={(ev: CustomEvent<{ date: Date; time: string; type: string }>) => this.onSlotPicked(ev)}>
               </cv2xvancoa-blood-donors-calendar>
             </div>
@@ -597,19 +608,43 @@ export class Cv2xvancoaBloodDonorsEditor {
     return target.value
   }
 
+  // živá kontrola formátu e-mailu a telefónu (nepovinné polia)
+  private checkContact() {
+    const e = this.entry;
+    this.emailError = e?.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.email)
+      ? "Zadajte platný e-mail" : "";
+    this.phoneError = e?.phone && !/^[0-9 +()\-]{6,}$/.test(e.phone.trim())
+      ? "Zadajte platné telefónne číslo (číslice, medzery, + ( ) -)" : "";
+  }
+
   private validateForm(mode: 'silent' | 'show-errors'): boolean {
-    this.isValid = true;
-    // polia sú zanorené v sekciách (.form-section > .fields), preto ich hľadáme rekurzívne
-    const controls = this.formElement.querySelectorAll('md-filled-text-field, md-filled-select');
+    // živé chyby kontaktu (e-mail/telefón) – aj pri uložení
+    this.checkContact();
+    // 1) vizuálna validácia polí (Material hlášky pri poliach)
+    let fieldsOk = true;
+    const controls = this.formElement
+      ? this.formElement.querySelectorAll('md-filled-text-field, md-filled-select')
+      : [];
     controls.forEach((element: any) => {
-      let valid = true;
-      if (mode === 'show-errors' && element.reportValidity) {
-        valid = element.reportValidity();
-      } else if (element.checkValidity) {
-        valid = element.checkValidity();
-      }
-      this.isValid &&= valid;
+      const ok = mode === 'show-errors' && element.reportValidity
+        ? element.reportValidity()
+        : (element.checkValidity ? element.checkValidity() : true);
+      fieldsOk = fieldsOk && ok;
     });
+
+    // 2) explicitná kontrola povinných údajov a formátov (spoľahlivé zablokovanie)
+    const e = this.entry;
+    const emailOk = !e?.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.email);
+    const phoneOk = !e?.phone || /^[0-9 +()\-]{6,}$/.test(e.phone.trim());
+    const nameOk = !!(e && e.name && e.name.trim());
+    // pohlavie + krvná skupina sú povinné (len v režime pracovníka, kde sa editujú)
+    const workerFieldsOk = this.isDonorMode || (!!e?.sex && !!e?.bloodType);
+    // dôvod nespôsobilosti je povinný, keď je darca označený ako nespôsobilý
+    const eligibilityOk = this.isDonorMode || e?.eligible !== false
+      || !!(e?.eligibilityNote && e.eligibilityNote.trim());
+    const dataOk = !!e && nameOk && workerFieldsOk && eligibilityOk && emailOk && phoneOk;
+
+    this.isValid = fieldsOk && dataOk;
     return this.isValid;
   }
 

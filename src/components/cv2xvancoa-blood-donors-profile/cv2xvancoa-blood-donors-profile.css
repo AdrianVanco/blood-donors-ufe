@@ -130,8 +130,34 @@
 /* zoznam termínov */
 md-list {
   --md-list-container-color: transparent;
-  --md-list-item-leading-icon-color: var(--blood);
   --md-list-item-label-text-color: var(--navy);
+}
+
+/* tlačidlo "Zobraziť všetky / menej" termíny */
+.show-more {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--navy);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.4rem 0.25rem;
+}
+
+.show-more:hover {
+  text-decoration: underline;
+}
+
+/* farba ikony podľa typu odberu */
+.type-icon.blood {
+  color: var(--blood);
+}
+
+.type-icon.plasma {
+  color: #f0a500;
 }
 
 /* oddeľovač medzi termínmi */

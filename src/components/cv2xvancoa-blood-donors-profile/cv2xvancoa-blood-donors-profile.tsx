@@ -27,6 +27,7 @@ export class Cv2xvancoaBloodDonorsProfile {
 
   @State() donor!: Donor;
   @State() errorMessage?: string;
+  @State() showAllTermini: boolean = false;
 
   async componentWillLoad() {
     try {
@@ -95,13 +96,13 @@ export class Cv2xvancoaBloodDonorsProfile {
         </div>
 
         <section class="card">
-          <h3 class="section-title">Moje termíny</h3>
+          <h3 class="section-title">Moje termíny ({donations.length})</h3>
           {donations.length === 0
             ? <div class="empty">Zatiaľ žiadne termíny.</div>
             : <md-list>
-              {donations.map(donation =>
+              {(this.showAllTermini ? donations : donations.slice(0, 5)).map(donation =>
                 <md-list-item>
-                  <md-icon slot="start">bloodtype</md-icon>
+                  <md-icon slot="start" class={"type-icon " + (donation.donationType?.code === 'plasma' ? 'plasma' : 'blood')}>bloodtype</md-icon>
                   <div slot="headline">{donation.donationType?.value ?? "Darovanie krvi"}</div>
                   <div slot="supporting-text">
                     {[
@@ -113,6 +114,11 @@ export class Cv2xvancoaBloodDonorsProfile {
               )}
             </md-list>
           }
+          {donations.length > 5
+            ? <button class="show-more" onClick={() => this.showAllTermini = !this.showAllTermini}>
+              {this.showAllTermini ? "Zobraziť menej" : `Zobraziť všetky (${donations.length})`}
+            </button>
+            : undefined}
         </section>
       </Host>
     );
