@@ -5,6 +5,8 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
+import { Donation } from "./api/blood-donors";
+export { Donation } from "./api/blood-donors";
 export namespace Components {
     /**
      * Hlavný aplikačný komponent microfrontendu darcov krvi.
@@ -12,26 +14,32 @@ export namespace Components {
      * zoznam darcov alebo editor konkrétneho darcu - funguje ako jednoduchý router.
      */
     interface Cv2xvancoaBloodDonors {
-        "apiBase": string;
+        "apiBase"?: string;
         /**
           * @default ""
          */
         "basePath": string;
-        "siteId": string;
+        "siteId"?: string;
     }
     interface Cv2xvancoaBloodDonorsCalendar {
-        "apiBase": string;
-        "donorId": string;
-        "siteId": string;
+        "apiBase"?: string;
+        "donations"?: Donation[];
+        "donorId"?: string;
+        /**
+          * @default false
+         */
+        "pickerMode"?: boolean;
+        "sex"?: string;
+        "siteId"?: string;
     }
     interface Cv2xvancoaBloodDonorsEditor {
-        "apiBase": string;
-        "entryId": string;
+        "apiBase"?: string;
+        "entryId"?: string;
         /**
           * @default "worker"
          */
         "mode": string;
-        "siteId": string;
+        "siteId"?: string;
     }
     /**
      * Zoznam registrovaných darcov pre pracovníka transfúznej stanice (scenár Darca/R).
@@ -39,18 +47,22 @@ export namespace Components {
      * preferovaný typ odberu. Tlačidlom „+" sa otvára registrácia nového darcu.
      */
     interface Cv2xvancoaBloodDonorsList {
-        "apiBase": string;
-        "siteId": string;
+        "apiBase"?: string;
+        "siteId"?: string;
     }
     /**
      * Obrazovka "Môj účet" - vlastný pohľad darcu (scenár Darca/CRUD: prezeranie profilu a histórie).
      * Bez prihlásenia je naviazaná na konkrétneho darcu (donorId), inak na prvého v zozname.
      */
     interface Cv2xvancoaBloodDonorsProfile {
-        "apiBase": string;
-        "donorId": string;
-        "siteId": string;
+        "apiBase"?: string;
+        "donorId"?: string;
+        "siteId"?: string;
     }
+}
+export interface Cv2xvancoaBloodDonorsCalendarCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLCv2xvancoaBloodDonorsCalendarElement;
 }
 export interface Cv2xvancoaBloodDonorsEditorCustomEvent<T> extends CustomEvent<T> {
     detail: T;
@@ -76,7 +88,18 @@ declare global {
         prototype: HTMLCv2xvancoaBloodDonorsElement;
         new (): HTMLCv2xvancoaBloodDonorsElement;
     };
+    interface HTMLCv2xvancoaBloodDonorsCalendarElementEventMap {
+        "slot-selected": { date: Date; time: string; type: string };
+    }
     interface HTMLCv2xvancoaBloodDonorsCalendarElement extends Components.Cv2xvancoaBloodDonorsCalendar, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLCv2xvancoaBloodDonorsCalendarElementEventMap>(type: K, listener: (this: HTMLCv2xvancoaBloodDonorsCalendarElement, ev: Cv2xvancoaBloodDonorsCalendarCustomEvent<HTMLCv2xvancoaBloodDonorsCalendarElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLCv2xvancoaBloodDonorsCalendarElementEventMap>(type: K, listener: (this: HTMLCv2xvancoaBloodDonorsCalendarElement, ev: Cv2xvancoaBloodDonorsCalendarCustomEvent<HTMLCv2xvancoaBloodDonorsCalendarElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLCv2xvancoaBloodDonorsCalendarElement: {
         prototype: HTMLCv2xvancoaBloodDonorsCalendarElement;
@@ -84,6 +107,7 @@ declare global {
     };
     interface HTMLCv2xvancoaBloodDonorsEditorElementEventMap {
         "editor-closed": string;
+        "notify": string;
     }
     interface HTMLCv2xvancoaBloodDonorsEditorElement extends Components.Cv2xvancoaBloodDonorsEditor, HTMLStencilElement {
         addEventListener<K extends keyof HTMLCv2xvancoaBloodDonorsEditorElementEventMap>(type: K, listener: (this: HTMLCv2xvancoaBloodDonorsEditorElement, ev: Cv2xvancoaBloodDonorsEditorCustomEvent<HTMLCv2xvancoaBloodDonorsEditorElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
@@ -101,6 +125,7 @@ declare global {
     };
     interface HTMLCv2xvancoaBloodDonorsListElementEventMap {
         "entry-clicked": string;
+        "notify": string;
     }
     /**
      * Zoznam registrovaných darcov pre pracovníka transfúznej stanice (scenár Darca/R).
@@ -166,7 +191,14 @@ declare namespace LocalJSX {
     }
     interface Cv2xvancoaBloodDonorsCalendar {
         "apiBase"?: string;
+        "donations"?: Donation[];
         "donorId"?: string;
+        "onSlot-selected"?: (event: Cv2xvancoaBloodDonorsCalendarCustomEvent<{ date: Date; time: string; type: string }>) => void;
+        /**
+          * @default false
+         */
+        "pickerMode"?: boolean;
+        "sex"?: string;
         "siteId"?: string;
     }
     interface Cv2xvancoaBloodDonorsEditor {
@@ -177,6 +209,7 @@ declare namespace LocalJSX {
          */
         "mode"?: string;
         "onEditor-closed"?: (event: Cv2xvancoaBloodDonorsEditorCustomEvent<string>) => void;
+        "onNotify"?: (event: Cv2xvancoaBloodDonorsEditorCustomEvent<string>) => void;
         "siteId"?: string;
     }
     /**
@@ -187,6 +220,7 @@ declare namespace LocalJSX {
     interface Cv2xvancoaBloodDonorsList {
         "apiBase"?: string;
         "onEntry-clicked"?: (event: Cv2xvancoaBloodDonorsListCustomEvent<string>) => void;
+        "onNotify"?: (event: Cv2xvancoaBloodDonorsListCustomEvent<string>) => void;
         "siteId"?: string;
     }
     /**
@@ -209,6 +243,8 @@ declare namespace LocalJSX {
         "apiBase": string;
         "siteId": string;
         "donorId": string;
+        "pickerMode": boolean;
+        "sex": string;
     }
     interface Cv2xvancoaBloodDonorsEditorAttributes {
         "entryId": string;

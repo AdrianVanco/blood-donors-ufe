@@ -18,15 +18,15 @@ const PREFERRED_LABEL: { [code: string]: string } = {
   shadow: true,
 })
 export class Cv2xvancoaBloodDonorsProfile {
-  @Prop() apiBase: string;
-  @Prop() siteId: string;
+  @Prop() apiBase?: string;
+  @Prop() siteId?: string;
   // ktorý darca je "prihlásený" (zatiaľ bez auth - default prvý darca)
-  @Prop() donorId: string;
+  @Prop() donorId?: string;
 
-  @Event({ eventName: "edit-profile" }) editProfile: EventEmitter<string>;
+  @Event({ eventName: "edit-profile" }) editProfile!: EventEmitter<string>;
 
-  @State() donor: Donor;
-  @State() errorMessage: string;
+  @State() donor!: Donor;
+  @State() errorMessage?: string;
 
   async componentWillLoad() {
     try {
@@ -88,7 +88,7 @@ export class Cv2xvancoaBloodDonorsProfile {
             <h3 class="section-title">Darcovské údaje</h3>
             <div class="info">
               <div class="row"><span class="label">Krvná skupina</span><span class="value">{d.bloodType || "—"}</span></div>
-              <div class="row"><span class="label">Preferovaný typ odberu</span><span class="value">{PREFERRED_LABEL[d.preferredDonationType] || "—"}</span></div>
+              <div class="row"><span class="label">Preferovaný typ odberu</span><span class="value">{PREFERRED_LABEL[d.preferredDonationType ?? ""] || "—"}</span></div>
               <div class="row"><span class="label">Preferované odberné miesto</span><span class="value">{siteName(d.preferredSite)}</span></div>
             </div>
           </section>
@@ -105,7 +105,7 @@ export class Cv2xvancoaBloodDonorsProfile {
                   <div slot="headline">{donation.donationType?.value ?? "Darovanie krvi"}</div>
                   <div slot="supporting-text">
                     {[
-                      donation.date ? new Date(donation.date).toLocaleString() : "",
+                      donation.date ? new Date(donation.date).toLocaleString("sk-SK", { dateStyle: "short", timeStyle: "short" }) : "",
                       donation.status,
                     ].filter(Boolean).join(" · ")}
                   </div>

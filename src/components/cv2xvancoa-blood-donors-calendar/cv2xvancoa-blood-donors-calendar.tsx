@@ -1,6 +1,11 @@
-import { Component, Host, Prop, State, h } from '@stencil/core';
+import { Component, Host, Prop, State, Event, EventEmitter, h } from '@stencil/core';
 import { DONATION_SITES as SITES } from '../../global/sites';
-import { DonorsApi, Configuration } from '../../api/blood-donors';
+import { DonorsApi, Configuration, Donation } from '../../api/blood-donors';
+
+// obmedzenia NTS SR: min. odstup medzi odbermi daného typu + ročný strop pre krv
+const ST_DONE = "Odber dokončený";
+const INTERVAL_DAYS: { [code: string]: number } = { blood: 70, plasma: 14 };
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const MONTHS = ["Január", "Február", "Marec", "Apríl", "Máj", "Jún",
   "Júl", "August", "September", "Október", "November", "December"];
@@ -22,17 +27,28 @@ function bloodSlots(): string[] {
   shadow: true,
 })
 export class Cv2xvancoaBloodDonorsCalendar {
-  @Prop() apiBase: string;
-  @Prop() siteId: string;
+  @Prop() apiBase?: string;
+  @Prop() siteId?: string;
   // ktorý darca je "prihlásený" (zatiaľ bez auth - default prvý darca)
-  @Prop() donorId: string;
+  @Prop() donorId?: string;
+  // picker režim: kalendár sa použije ako výber termínu (napr. v dialógu editora)
+  // a namiesto hlášky emituje vybraný termín
+  @Prop() pickerMode?: boolean = false;
+  // termíny darcu a pohlavie – na kontrolu odstupu a ročného limitu pri rezervácii
+  @Prop() donations?: Donation[];
+  @Prop() sex?: string;
+
+  @Event({ eventName: "slot-selected" }) slotSelected!: EventEmitter<{ date: Date; time: string; type: string }>;
 
   @State() type: 'blood' | 'plasma' = 'blood';
-  @State() site: string;
+  @State() site!: string;
   @State() monthCursor: Date = startOfMonth(new Date());
   @State() selectedDay: Date | null = null;
   @State() selectedSlot: string | null = null;
   @State() notice: string | null = null;
+  @State() noticeKind: 'ok' | 'warn' = 'ok';
+  // spôsobilosť prihláseného darcu (nespôsobilý si nemôže rezervovať termín)
+  @State() eligible: boolean = true;
 
   async componentWillLoad() {
     this.site = this.siteId || SITES[0].id;
@@ -49,6 +65,7 @@ export class Cv2xvancoaBloodDonorsCalendar {
         }
         // preferovaný typ: plazma -> plazma; krv aj "oboje" -> krv (default)
         this.type = me.preferredDonationType === 'plasma' ? 'plasma' : 'blood';
+        this.eligible = me.eligible !== false;
       }
     } catch (e) {
       // ponecháme predvolené hodnoty
@@ -61,7 +78,8 @@ export class Cv2xvancoaBloodDonorsCalendar {
     this.selectedSlot = null;
   }
 
-  // dostupnosť dňa: nie v minulosti; krv Po-Pi, plazma len Po-Št
+  // dostupnosť dňa: nie v minulosti; krv Po-Pi, plazma len Po-Št;
+  // + dodržanie odstupu od posledného odberu a ročného limitu krvi
   private isAvailable(date: Date): boolean {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -69,7 +87,39 @@ export class Cv2xvancoaBloodDonorsCalendar {
       return false;
     }
     const isoDow = date.getDay() === 0 ? 7 : date.getDay(); // 1=Po .. 7=Ne
-    return this.type === 'plasma' ? isoDow >= 1 && isoDow <= 4 : isoDow >= 1 && isoDow <= 5;
+    const dayOk = this.type === 'plasma' ? isoDow >= 1 && isoDow <= 4 : isoDow >= 1 && isoDow <= 5;
+    if (!dayOk) {
+      return false;
+    }
+    // odstup od posledného dokončeného odberu daného typu
+    const next = this.nextEligibleDate();
+    if (next && date.getTime() < next.getTime()) {
+      return false;
+    }
+    // ročný limit krvi (ženy 3×, muži 4× za kalendárny rok)
+    if (this.type === 'blood') {
+      const cap = this.sex === 'F' ? 3 : 4;
+      const doneThatYear = (this.donations || []).filter(d =>
+        d.status === ST_DONE && d.donationType?.code === 'blood'
+        && d.date && new Date(d.date).getFullYear() === date.getFullYear()).length;
+      if (doneThatYear >= cap) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // najbližší možný dátum odberu aktuálneho typu (podľa odstupu od posledného dokončeného)
+  private nextEligibleDate(): Date | null {
+    const done = (this.donations || []).filter(d =>
+      d.status === ST_DONE && d.donationType?.code === this.type && d.date);
+    if (done.length === 0) {
+      return null;
+    }
+    const last = Math.max(...done.map(d => new Date(d.date!).getTime()));
+    const next = new Date(last + (INTERVAL_DAYS[this.type] || 0) * DAY_MS);
+    next.setHours(0, 0, 0, 0);
+    return next;
   }
 
   private slotsForType(): string[] {
@@ -85,21 +135,51 @@ export class Cv2xvancoaBloodDonorsCalendar {
     this.monthCursor = target;
   }
 
+  private slotsPanelEl?: HTMLElement;
+  private confirmEl?: HTMLElement;
+
+  // plynulý scroll na ďalší krok po renderi
+  private scrollToEl(getEl: () => HTMLElement | undefined) {
+    setTimeout(() => getEl()?.scrollIntoView({ behavior: "smooth", block: "center" }), 70);
+  }
+
   private selectDay(date: Date) {
     if (!this.isAvailable(date)) {
       return;
     }
     this.selectedDay = date;
     this.selectedSlot = null;
+    // po výbere dňa scrollni na výber času
+    this.scrollToEl(() => this.slotsPanelEl);
+  }
+
+  private selectSlot(slot: string) {
+    this.selectedSlot = slot;
+    // po výbere času scrollni na potvrdzovacie tlačidlo
+    this.scrollToEl(() => this.confirmEl);
   }
 
   private reserve() {
     if (!this.selectedDay || !this.selectedSlot) {
       return;
     }
+    // picker režim (pracovník v editore): emitujeme vybraný termín a končíme
+    if (this.pickerMode) {
+      this.slotSelected.emit({ date: this.selectedDay, time: this.selectedSlot, type: this.type });
+      this.selectedDay = null;
+      this.selectedSlot = null;
+      return;
+    }
+    // nespôsobilý darca si nemôže rezervovať termín
+    if (!this.eligible) {
+      this.noticeKind = 'warn';
+      this.notice = "Nie ste spôsobilý na darovanie, termín si nemôžete rezervovať. Kontaktujte transfúznu stanicu.";
+      return;
+    }
     const d = this.selectedDay;
     const siteName = SITES.find(s => s.id === this.site)?.name ?? this.site;
     const typeName = this.type === 'plasma' ? "darovanie krvnej plazmy" : "darovanie krvi";
+    this.noticeKind = 'ok';
     this.notice = `Rezervácia úspešná: ${typeName}, ${siteName}, ${formatDay(d)} o ${this.selectedSlot}.`;
     this.selectedDay = null;
     this.selectedSlot = null;
@@ -108,12 +188,22 @@ export class Cv2xvancoaBloodDonorsCalendar {
   render() {
     const left = this.monthCursor;
     const atCurrentMonth = left.getTime() <= startOfMonth(new Date()).getTime();
+    const nextElig = this.pickerMode ? this.nextEligibleDate() : null;
+    const eligInfo = nextElig && nextElig.getTime() > Date.now() ? nextElig : null;
     return (
       <Host>
-        <h2 class="page-title">Rezervácia termínu</h2>
+        {this.pickerMode ? undefined : <h2 class="page-title">Rezervácia termínu</h2>}
+
+        {!this.pickerMode && !this.eligible
+          ? <div class="notice warn">
+            <md-icon>error</md-icon>
+            <span>Nie ste spôsobilý na darovanie, rezervácia termínu nie je možná. Kontaktujte transfúznu stanicu.</span>
+          </div>
+          : undefined}
+
         {this.notice
-          ? <div class="notice">
-            <md-icon>check_circle</md-icon>
+          ? <div class={"notice " + this.noticeKind}>
+            <md-icon>{this.noticeKind === 'warn' ? 'error' : 'check_circle'}</md-icon>
             <span>{this.notice}</span>
             <md-icon class="notice-close" onClick={() => this.notice = null}>close</md-icon>
           </div>
@@ -137,7 +227,14 @@ export class Cv2xvancoaBloodDonorsCalendar {
           </md-filled-select>
         </div>
 
-        <div class="calendar">
+        {eligInfo
+          ? <div class="notice warn">
+            <md-icon>info</md-icon>
+            <span>Najbližší možný {this.type === 'plasma' ? 'odber plazmy' : 'odber krvi'} pre tohto darcu: {eligInfo.toLocaleDateString('sk-SK')} (skoršie dni sú nedostupné).</span>
+          </div>
+          : undefined}
+
+        <div class={"calendar" + (this.pickerMode ? " picker" : "")}>
           <div class="cal-nav">
             <md-filled-icon-button class="nav-btn" disabled={atCurrentMonth} onClick={() => this.shiftMonths(-1)}>
               <md-icon>chevron_left</md-icon>
@@ -203,16 +300,16 @@ export class Cv2xvancoaBloodDonorsCalendar {
     }
     const slots = this.slotsForType();
     return (
-      <div class="slots-panel">
+      <div class="slots-panel" ref={el => this.slotsPanelEl = el as HTMLElement}>
         <h3>{formatDay(this.selectedDay)}</h3>
         <div class="slots">
           {slots.map(s => (
             <button class={"slot" + (this.type === 'plasma' ? " plasma" : " blood") + (this.selectedSlot === s ? " selected" : "")}
-              onClick={() => this.selectedSlot = s}>{s}</button>
+              onClick={() => this.selectSlot(s)}>{s}</button>
           ))}
         </div>
         {this.selectedSlot
-          ? <div class="confirm">
+          ? <div class="confirm" ref={el => this.confirmEl = el as HTMLElement}>
             <h3>{formatDay(this.selectedDay)} o {this.selectedSlot}</h3>
             <md-filled-button onClick={() => this.reserve()}>
               <md-icon slot="icon">event_available</md-icon>

@@ -1,9 +1,5 @@
 import { Component, Host, Prop, State, h } from '@stencil/core';
 
-declare global {
-  interface Window { navigation: any; }
-}
-
 /**
  * Hlavný aplikačný komponent microfrontendu darcov krvi.
  * Podľa aktuálnej URL (relatívnej k base-path) rozhoduje, či sa zobrazí
@@ -16,10 +12,22 @@ declare global {
 })
 export class Cv2xvancoaBloodDonors {
   @State() private relativePath = "";
+  @State() private snackbar: string | null = null;
+  @State() private snackbarError: boolean = false;
+  @State() private snackSeq: number = 0;
+  private snackTimer: any;
 
   @Prop() basePath: string = "";
-  @Prop() apiBase: string;
-  @Prop() siteId: string;
+  @Prop() apiBase?: string;
+  @Prop() siteId?: string;
+
+  private showSnack(message: string, error = false) {
+    this.snackbar = message;
+    this.snackbarError = error;
+    this.snackSeq++; // vždy zmení key -> notifikácia sa znova animuje aj pri rovnakom texte
+    clearTimeout(this.snackTimer);
+    this.snackTimer = setTimeout(() => (this.snackbar = null), 3500);
+  }
 
   componentWillLoad() {
     const baseUri = new URL(this.basePath, document.baseURI || "/").pathname;
@@ -87,7 +95,12 @@ export class Cv2xvancoaBloodDonors {
         {element === "editor"
           ? <cv2xvancoa-blood-donors-editor entry-id={entryId} mode={editorMode}
             site-id={this.siteId} api-base={this.apiBase}
-            oneditor-closed={() => navigate(editorMode === "donor" ? "./profile" : "./list")} >
+            onNotify={(ev: CustomEvent<string>) => this.showSnack(ev.detail)}
+            oneditor-closed={(ev: CustomEvent<string>) => {
+              if (ev.detail === "store") this.showSnack("Darca uložený");
+              else if (ev.detail === "delete") this.showSnack("Darca zmazaný");
+              navigate(editorMode === "donor" ? "./profile" : "./list");
+            }} >
           </cv2xvancoa-blood-donors-editor>
           : element === "calendar"
             ? <cv2xvancoa-blood-donors-calendar site-id={this.siteId} api-base={this.apiBase}>
@@ -97,9 +110,17 @@ export class Cv2xvancoaBloodDonors {
                 onedit-profile={(ev: CustomEvent<string>) => navigate("./self/" + ev.detail)}>
               </cv2xvancoa-blood-donors-profile>
               : <cv2xvancoa-blood-donors-list site-id={this.siteId} api-base={this.apiBase}
+                onNotify={(ev: CustomEvent<string>) => this.showSnack(ev.detail)}
                 onentry-clicked={(ev: CustomEvent<string>) => navigate("./entry/" + ev.detail)} >
               </cv2xvancoa-blood-donors-list>
         }
+
+        {this.snackbar
+          ? <div key={this.snackSeq} class={"snackbar" + (this.snackbarError ? " error" : "")}>
+            <md-icon>{this.snackbarError ? "error" : "check_circle"}</md-icon>
+            <span>{this.snackbar}</span>
+          </div>
+          : undefined}
 
       </Host>
     );

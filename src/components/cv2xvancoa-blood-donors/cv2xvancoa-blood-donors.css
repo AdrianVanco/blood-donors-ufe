@@ -30,3 +30,42 @@
     flex: 0 0 auto;
   }
 }
+
+/* ===== snackbar (notifikácie po akciách) ===== */
+.snackbar {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--navy);
+  color: #fff;
+  padding: 0.75rem 1.25rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  z-index: 1000;
+  max-width: min(92vw, 30rem);
+  animation: snackbar-in 0.2s ease-out;
+}
+
+.snackbar.error {
+  background: #c8102e;
+}
+
+.snackbar md-icon {
+  --md-icon-size: 1.25rem;
+  flex: 0 0 auto;
+}
+
+@keyframes snackbar-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}

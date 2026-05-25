@@ -1,6 +1,9 @@
 :host {
   --navy: #16306b;
   --blood: #c8102e;
+  --md-sys-color-primary: var(--navy);
+  --md-sys-color-secondary-container: #eef1f7;
+  --md-sys-color-on-secondary-container: var(--navy);
 
   display: block;
   width: 100%;
@@ -31,6 +34,30 @@
   --md-filled-text-field-leading-icon-color: var(--navy);
 }
 
+/* filtre pohlavie + spôsobilosť */
+.filters {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.filter {
+  flex: 1 1 0;
+  --md-sys-color-primary: var(--navy);
+  --md-filled-select-text-field-container-color: #f3f5f9;
+  --md-filled-select-text-field-focus-active-indicator-color: var(--navy);
+  --md-filled-select-text-field-input-text-color: var(--navy);
+  --md-filled-select-text-field-leading-icon-color: var(--navy);
+  --md-menu-container-color: #ffffff;
+}
+
+@media (max-width: 600px) {
+  .filters {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
 /* zoznam darcov */
 md-list {
   --md-list-container-color: transparent;
@@ -49,6 +76,78 @@ md-list-item:not(:last-of-type) {
   white-space: nowrap;
   font-size: 0.875rem;
   opacity: 0.8;
+}
+
+/* stav spôsobilosti + akcia v riadku */
+.row-end {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.elig {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.elig.ok {
+  background: #e6f4ea;
+  color: #1e7e34;
+}
+
+.elig.no {
+  background: #fbf1f2;
+  color: var(--blood);
+}
+
+.reserve-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--navy);
+  padding: 0.35rem;
+  border-radius: 50%;
+}
+
+.reserve-btn:hover {
+  background: #eef1f7;
+}
+
+.reserve-btn md-icon {
+  --md-icon-size: 1.5rem;
+}
+
+/* dialóg s kalendárom (rezervácia z riadku) */
+md-dialog {
+  --md-sys-color-surface: #ffffff;
+  --md-dialog-container-color: #ffffff;
+  --md-dialog-headline-color: var(--navy);
+  --md-dialog-container-shape: 16px;
+  max-width: min(94vw, 46rem) !important;
+  width: min(94vw, 46rem) !important;
+  max-height: min(92vh, 52rem) !important;
+}
+
+md-dialog [slot="content"] {
+  padding: 0;
+}
+
+md-dialog [slot="headline"] {
+  font-weight: 700;
+  color: var(--navy);
+}
+
+@media (max-width: 600px) {
+  .elig {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.45rem;
+  }
 }
 
 .empty {

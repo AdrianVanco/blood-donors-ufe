@@ -45,24 +45,26 @@ const ST_CANCELLED = "Zrušená rezervácia";
   shadow: true,
 })
 export class Cv2xvancoaBloodDonorsEditor {
-  @Prop() entryId: string;
-  @Prop() siteId: string;
-  @Prop() apiBase: string;
+  @Prop() entryId?: string;
+  @Prop() siteId?: string;
+  @Prop() apiBase?: string;
   // "worker" = plný editor pracovníka, "donor" = obmedzený self-edit darcu
   @Prop() mode: string = "worker";
 
-  @Event({ eventName: "editor-closed" }) editorClosed: EventEmitter<string>;
+  @Event({ eventName: "editor-closed" }) editorClosed!: EventEmitter<string>;
+  @Event({ eventName: "notify" }) notify!: EventEmitter<string>;
 
-  @State() entry: Donor;
-  @State() errorMessage: string;
-  @State() isValid: boolean;
+  @State() entry!: Donor;
+  @State() errorMessage?: string;
+  @State() isValid!: boolean;
 
-  // vstupy pre pridanie nového termínu
-  @State() newTerminType: string = "blood";
-  @State() newTerminDate: string = "";
-  @State() newTerminNote: string = "";
+  // pridanie nového termínu cez kalendár v dialógu
+  @State() showCalendar: boolean = false;
+  @State() terminiOpen: boolean = true;
+  // potvrdzovací dialóg pri deštruktívnych akciách
+  @State() confirm: { message: string; confirmLabel: string; action: () => void } | null = null;
 
-  private formElement: HTMLFormElement;
+  private formElement!: HTMLFormElement;
 
   async componentWillLoad() {
     this.getDonorAsync();
@@ -131,6 +133,8 @@ export class Cv2xvancoaBloodDonorsEditor {
       if (donor) {
         this.entry = donor;
         this.isValid = true;
+        // pri väčšom počte termínov ich predvolene zbalíme
+        this.terminiOpen = (donor.donations?.length ?? 0) <= 4;
       } else {
         this.errorMessage = "Darcu sa nepodarilo načítať.";
       }
@@ -152,7 +156,7 @@ export class Cv2xvancoaBloodDonorsEditor {
         <h2 class="page-title">
           {this.isDonorMode ? "Úprava profilu" : (this.isNew ? "Nový darca" : "Úprava darcu")}
         </h2>
-        <form ref={el => this.formElement = el}>
+        <form ref={el => { if (el) this.formElement = el; }}>
           <section class="form-section">
             <h3 class="section-title">Všeobecné údaje</h3>
             <div class="fields">
@@ -217,7 +221,7 @@ export class Cv2xvancoaBloodDonorsEditor {
         <md-divider></md-divider>
         <div class="actions">
           <md-filled-tonal-button id="delete" disabled={!this.entry || this.entry?.id === "@new"}
-            onClick={() => this.deleteEntry()} >
+            onClick={() => this.askConfirm("Naozaj zmazať darcu? Túto akciu nie je možné vrátiť.", "Zmazať", () => this.deleteEntry())} >
             <md-icon slot="icon">delete</md-icon>
             Zmazať
           </md-filled-tonal-button>
@@ -397,54 +401,71 @@ export class Cv2xvancoaBloodDonorsEditor {
       .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
     return (
       <div class="termini">
-        <h3>Termíny a odbery</h3>
-        {donations.length === 0
-          ? <div class="termini-empty">Zatiaľ žiadne termíny.</div>
-          : <md-list>
-            {donations.map(donation =>
-              <md-list-item class={this.terminClass(donation.status)}>
-                <md-icon slot="start">bloodtype</md-icon>
-                <div slot="headline">{donation.donationType?.value ?? "Darovanie krvi"}</div>
-                <div slot="supporting-text">
-                  {[
-                    donation.date ? new Date(donation.date).toLocaleString() : "",
-                    donation.status,
-                    donation.note,
-                  ].filter(Boolean).join(" · ")}
-                </div>
-                <div slot="end" class="termin-actions">
-                  {this.terminActions(donation)}
-                </div>
-              </md-list-item>
-            )}
-          </md-list>
-        }
-
         {this.isDonorMode ? undefined :
         <div class="add-termin">
-          <md-filled-select label="Typ odberu"
-            display-text={DONATION_TYPES.find(t => t.code === this.newTerminType)?.value}
-            oninput={(ev: InputEvent) => this.newTerminType = (ev.target as HTMLInputElement).value}>
-            {DONATION_TYPES.map(t => (
-              <md-select-option value={t.code} selected={t.code === this.newTerminType}>
-                <div slot="headline">{t.value}</div>
-              </md-select-option>
-            ))}
-          </md-filled-select>
-          <md-filled-text-field label="Dátum a čas" type="datetime-local"
-            value={this.newTerminDate}
-            oninput={(ev: InputEvent) => this.newTerminDate = (ev.target as HTMLInputElement).value}>
-          </md-filled-text-field>
-          <md-filled-text-field label="Poznámka (nepovinné)"
-            value={this.newTerminNote}
-            oninput={(ev: InputEvent) => this.newTerminNote = (ev.target as HTMLInputElement).value}>
-            <md-icon slot="leading-icon">edit_note</md-icon>
-          </md-filled-text-field>
-          <md-outlined-button onClick={() => this.addTermin()}>
-            <md-icon slot="icon">add</md-icon>
-            Rezervovať termín
+          <md-outlined-button onClick={() => this.showCalendar = true}>
+            <md-icon slot="icon">calendar_month</md-icon>
+            Rezervovať nový termín
           </md-outlined-button>
         </div>}
+
+        <button type="button" class="termini-header"
+          onClick={() => this.terminiOpen = !this.terminiOpen}>
+          <span>Termíny a odbery ({donations.length})</span>
+          <md-icon>{this.terminiOpen ? "expand_less" : "expand_more"}</md-icon>
+        </button>
+
+        {this.terminiOpen
+          ? (donations.length === 0
+            ? <div class="termini-empty">Zatiaľ žiadne termíny.</div>
+            : <md-list>
+              {donations.map(donation =>
+                <md-list-item class={this.terminClass(donation.status)}>
+                  <md-icon slot="start">bloodtype</md-icon>
+                  <div slot="headline">{donation.donationType?.value ?? "Darovanie krvi"}</div>
+                  <div slot="supporting-text">
+                    {[
+                      donation.date ? new Date(donation.date).toLocaleString("sk-SK", { dateStyle: "short", timeStyle: "short" }) : "",
+                      donation.status,
+                      donation.note,
+                    ].filter(Boolean).join(" · ")}
+                  </div>
+                  <div slot="end" class="termin-actions">
+                    {this.terminActions(donation)}
+                  </div>
+                </md-list-item>
+              )}
+            </md-list>)
+          : undefined}
+
+        {this.showCalendar
+          ? <md-dialog open onClosed={() => this.showCalendar = false}>
+            <div slot="headline">Rezervácia termínu</div>
+            <div slot="content">
+              <cv2xvancoa-blood-donors-calendar picker-mode
+                site-id={this.siteId} api-base={this.apiBase}
+                donations={this.entry?.donations} sex={this.entry?.sex}
+                onslot-selected={(ev: CustomEvent<{ date: Date; time: string; type: string }>) => this.onSlotPicked(ev)}>
+              </cv2xvancoa-blood-donors-calendar>
+            </div>
+            <div slot="actions">
+              <md-outlined-button onClick={() => this.showCalendar = false}>Zavrieť</md-outlined-button>
+            </div>
+          </md-dialog>
+          : undefined}
+
+        {this.confirm
+          ? <md-dialog open class="confirm-dialog" onClosed={() => this.confirm = null}>
+            <div slot="headline">Potvrdenie</div>
+            <div slot="content">{this.confirm.message}</div>
+            <div slot="actions">
+              <md-outlined-button onClick={() => this.confirm = null}>Späť</md-outlined-button>
+              <md-filled-button class="danger" onClick={() => this.runConfirm()}>
+                {this.confirm.confirmLabel}
+              </md-filled-button>
+            </div>
+          </md-dialog>
+          : undefined}
       </div>
     );
   }
@@ -473,12 +494,12 @@ export class Cv2xvancoaBloodDonorsEditor {
         return [
           <md-outlined-button onClick={() => this.advanceStatus(donation, ST_ELIGIBLE)}>Spôsobilý</md-outlined-button>,
           <md-outlined-button onClick={() => this.markIneligible(donation)}>Nespôsobilý</md-outlined-button>,
-          <md-outlined-button onClick={() => this.advanceStatus(donation, ST_CANCELLED)}>Zrušiť</md-outlined-button>,
+          <md-outlined-button onClick={() => this.askConfirm("Naozaj zrušiť tento termín?", "Zrušiť termín", () => this.advanceStatus(donation, ST_CANCELLED))}>Zrušiť</md-outlined-button>,
         ];
       case ST_ELIGIBLE:
         return [
           <md-outlined-button onClick={() => this.advanceStatus(donation, ST_DONE)}>Odber dokončený</md-outlined-button>,
-          <md-outlined-button onClick={() => this.advanceStatus(donation, ST_CANCELLED)}>Zrušiť</md-outlined-button>,
+          <md-outlined-button onClick={() => this.askConfirm("Naozaj zrušiť tento termín?", "Zrušiť termín", () => this.advanceStatus(donation, ST_CANCELLED))}>Zrušiť</md-outlined-button>,
           back,
         ];
       default:
@@ -496,6 +517,7 @@ export class Cv2xvancoaBloodDonorsEditor {
       donations: (this.entry.donations || []).map(d =>
         d === target ? { ...d, status, note: note !== undefined ? note : d.note } : d),
     };
+    this.persist("Stav termínu uložený");
   }
 
   // pri nespôsobilosti sa zaznamená dôvod (povinný)
@@ -511,23 +533,62 @@ export class Cv2xvancoaBloodDonorsEditor {
     this.advanceStatus(target, ST_INELIGIBLE, reason.trim());
   }
 
-  private addTermin() {
-    if (!this.entry || !this.newTerminDate) {
+  // termín vybraný v kalendári (picker v dialógu) – hneď ho pridá darcovi
+  private onSlotPicked(ev: CustomEvent<{ date: Date; time: string; type: string }>) {
+    this.showCalendar = false;
+    if (!this.entry) {
       return;
     }
-    const type = DONATION_TYPES.find(t => t.code === this.newTerminType);
+    const { date, time, type } = ev.detail;
+    const day = new Date(date);
+    const [h, m] = time.split(":").map(Number);
+    day.setHours(h, m, 0, 0);
+    const dt = DONATION_TYPES.find(t => t.code === type);
     const donation: Donation = {
-      date: new Date(this.newTerminDate),
-      donationType: type ? { code: type.code, value: type.value } : undefined,
+      date: day,
+      donationType: dt ? { code: dt.code, value: dt.value } : undefined,
       status: ST_BOOKED,
-      note: this.newTerminNote || undefined,
     };
     this.entry = {
       ...this.entry,
       donations: [...(this.entry.donations || []), donation],
     };
-    this.newTerminDate = "";
-    this.newTerminNote = "";
+    this.persist("Termín pridaný");
+  }
+
+  // okamžité uloženie zmien termínov do backendu (pri existujúcom darcovi)
+  private async persist(message: string) {
+    if (!this.entry) {
+      return;
+    }
+    if (this.entryId === "@new") {
+      // nový darca ešte nie je vytvorený – termíny sa uložia spolu cez "Uložiť"
+      this.notify.emit(`${message} – nezabudnite uložiť darcu`);
+      return;
+    }
+    try {
+      const configuration = new Configuration({ basePath: this.apiBase });
+      const response = await new DonorsApi(configuration)
+        .updateDonorRaw({ siteId: this.siteId, entryId: this.entryId, donor: this.entry });
+      if (response.raw.status < 299) {
+        this.notify.emit(message);
+      } else {
+        this.errorMessage = `Uloženie zlyhalo: ${response.raw.statusText}`;
+      }
+    } catch (err: any) {
+      this.errorMessage = `Uloženie zlyhalo: ${err.message || "neznáma chyba"}`;
+    }
+  }
+
+  // potvrdzovací dialóg pri deštruktívnych akciách
+  private askConfirm(message: string, confirmLabel: string, action: () => void) {
+    this.confirm = { message, confirmLabel, action };
+  }
+
+  private runConfirm() {
+    const action = this.confirm?.action;
+    this.confirm = null;
+    action?.();
   }
 
   private handleInputEvent(ev: InputEvent): string {
@@ -538,12 +599,9 @@ export class Cv2xvancoaBloodDonorsEditor {
 
   private validateForm(mode: 'silent' | 'show-errors'): boolean {
     this.isValid = true;
-    for (let i = 0; i < this.formElement.children.length; i++) {
-      const element = this.formElement.children[i] as HTMLElement & {
-        checkValidity?: () => boolean;
-        reportValidity?: () => boolean;
-      };
-
+    // polia sú zanorené v sekciách (.form-section > .fields), preto ich hľadáme rekurzívne
+    const controls = this.formElement.querySelectorAll('md-filled-text-field, md-filled-select');
+    controls.forEach((element: any) => {
       let valid = true;
       if (mode === 'show-errors' && element.reportValidity) {
         valid = element.reportValidity();
@@ -551,7 +609,7 @@ export class Cv2xvancoaBloodDonorsEditor {
         valid = element.checkValidity();
       }
       this.isValid &&= valid;
-    }
+    });
     return this.isValid;
   }
 

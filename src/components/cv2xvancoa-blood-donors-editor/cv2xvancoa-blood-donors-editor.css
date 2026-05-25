@@ -5,6 +5,9 @@
 
   /* navy ako primárna farba pre všetky Material tlačidlá/polia v editore */
   --md-sys-color-primary: var(--navy);
+  /* vybraná položka v selecte (a iné "selected" stavy) v navy odtieni */
+  --md-sys-color-secondary-container: #eef1f7;
+  --md-sys-color-on-secondary-container: var(--navy);
 
   display: block;
   width: 100%;
@@ -193,11 +196,14 @@ form {
   border-bottom: 1px solid #e7ebf2;
 }
 
-/* zrušený / nespôsobilý termín: prečiarkneme a stlmíme len text, nie akcie */
-md-list-item.cancelled [slot="headline"],
-md-list-item.cancelled [slot="supporting-text"] {
+/* zrušený / nespôsobilý termín: prečiarkneme len názov, popis (vrátane dôvodu) ostáva čitateľný */
+md-list-item.cancelled [slot="headline"] {
   text-decoration: line-through;
   opacity: 0.6;
+}
+
+md-list-item.cancelled [slot="supporting-text"] {
+  opacity: 0.85;
 }
 
 .termin-actions {
@@ -211,7 +217,136 @@ md-list-item.cancelled [slot="supporting-text"] {
   display: flex;
   flex-direction: column;
   gap: var(--_wl-editor_gap);
-  margin-top: 0.75rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e7ebf2;
+}
+
+/* rozbaľovacia hlavička zoznamu termínov */
+.termini-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0.25rem 0;
+  margin: 0;
+  cursor: pointer;
+  color: var(--navy);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+
+.termini-header md-icon {
+  opacity: 0.9;
+}
+
+.add-termin-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+/* pole "Termín" sa správa ako tlačidlo – otvára kalendár */
+.term-field {
+  cursor: pointer;
+}
+
+/* dialóg s kalendárom na výber termínu */
+md-dialog {
+  --md-sys-color-primary: var(--navy);
+  --md-sys-color-surface: #ffffff;
+  --md-sys-color-surface-container-high: #ffffff;
+  --md-dialog-container-color: #ffffff;
+  --md-dialog-headline-color: var(--navy);
+  --md-dialog-supporting-text-color: var(--navy);
+  --md-dialog-container-shape: 16px;
+
+  /* md-dialog má na :host napevno max-width/height 560px – prebijeme cez !important,
+     responzívne: na mobile takmer plná plocha, na desktope väčší dialóg */
+  max-width: min(94vw, 46rem) !important;
+  width: min(94vw, 46rem) !important;
+  max-height: min(92vh, 52rem) !important;
+}
+
+/* nadpis dialógu */
+md-dialog [slot="headline"] {
+  font-weight: 700;
+  color: var(--navy);
+}
+
+/* obsah dialógu – kalendár si nesie vlastné odsadenie */
+md-dialog [slot="content"] {
+  padding: 0;
+  color: var(--navy);
+}
+
+/* lišta akcií dialógu */
+md-dialog [slot="actions"] {
+  padding: 0.5rem 1rem 1rem;
+}
+
+md-dialog [slot="actions"] md-outlined-button {
+  --md-sys-color-primary: var(--navy);
+}
+
+/* potvrdzovací (deštruktívny) dialóg – červené potvrdzovacie tlačidlo */
+md-dialog [slot="actions"] .danger {
+  --md-filled-button-container-color: var(--blood);
+}
+
+.confirm-dialog [slot="content"] {
+  padding: 0.5rem 1.5rem 0;
+  font-size: 1rem;
+}
+
+/* natívny dátumový výber zladený s Material poľami */
+.date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.date-field-label {
+  font-size: 0.8rem;
+  color: var(--navy);
+  opacity: 0.75;
+  padding-left: 0.25rem;
+}
+
+.date-input {
+  font: inherit;
+  color: var(--navy);
+  background: #f3f5f9;
+  border: none;
+  border-bottom: 2px solid #c2cbdd;
+  border-radius: 8px 8px 0 0;
+  padding: 0.85rem 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.date-input:hover {
+  border-bottom-color: var(--navy);
+}
+
+.date-input:focus {
+  outline: none;
+  border-bottom-color: var(--navy);
+}
+
+.date-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
 }
 
 .actions {

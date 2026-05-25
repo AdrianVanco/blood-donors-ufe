@@ -41,6 +41,12 @@
   margin-right: auto;
 }
 
+.notice.warn {
+  background: #fbf1f2;
+  color: var(--blood);
+  border-color: var(--blood);
+}
+
 .notice-close {
   margin-left: auto;
   cursor: pointer;
@@ -118,6 +124,16 @@
 .calendar {
   max-width: 34rem;
   margin: 0 auto;
+}
+
+/* picker režim (v dialógu): kalendár vyplní šírku dialógu, väčšie bunky */
+.calendar.picker {
+  max-width: 40rem;
+}
+
+.calendar.picker .cell {
+  height: 3.4rem;
+  font-size: 1.05rem;
 }
 
 /* navigačná hlavička: šípky po stranách titulku, na stred, nad mriežkou */
