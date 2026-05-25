@@ -149,48 +149,66 @@ export class Cv2xvancoaBloodDonorsEditor {
     }
     return (
       <Host>
+        <h2 class="page-title">
+          {this.isDonorMode ? "Úprava profilu" : (this.isNew ? "Nový darca" : "Úprava darcu")}
+        </h2>
         <form ref={el => this.formElement = el}>
-          <md-filled-text-field label="Meno a priezvisko"
-            required pattern=".*\S.*" value={this.entry?.name}
-            oninput={(ev: InputEvent) => {
-              if (this.entry) { this.entry.name = this.handleInputEvent(ev) }
-            }}>
-            <md-icon slot="leading-icon">person</md-icon>
-          </md-filled-text-field>
+          <section class="form-section">
+            <h3 class="section-title">Všeobecné údaje</h3>
+            <div class="fields">
+              <md-filled-text-field class="full" label="Meno a priezvisko"
+                required pattern=".*\S.*" value={this.entry?.name}
+                oninput={(ev: InputEvent) => {
+                  if (this.entry) { this.entry.name = this.handleInputEvent(ev) }
+                }}>
+                <md-icon slot="leading-icon">person</md-icon>
+              </md-filled-text-field>
 
-          <md-filled-text-field label="Registračné číslo darcu" disabled
-            value={this.entry?.donorId}
-            supporting-text={this.isNew ? "Pridelené automaticky" : "Registračné číslo sa nedá zmeniť"}>
-            <md-icon slot="leading-icon">fingerprint</md-icon>
-          </md-filled-text-field>
+              <md-filled-text-field label="Registračné číslo darcu" readonly
+                value={this.entry?.donorId}
+                supporting-text={this.isNew ? "Pridelené automaticky" : "Registračné číslo sa nedá zmeniť"}>
+                <md-icon slot="leading-icon">fingerprint</md-icon>
+              </md-filled-text-field>
 
-          {this.isDonorMode ? undefined : this.renderSex()}
-          {this.isDonorMode ? undefined : this.renderBloodType()}
+              <md-filled-text-field label="Registrovaný od" readonly
+                value={new Date(this.entry?.registeredSince || Date.now()).toLocaleDateString()}>
+                <md-icon slot="leading-icon">how_to_reg</md-icon>
+              </md-filled-text-field>
 
-          <md-filled-text-field label="E-mail" type="email"
-            value={this.entry?.email}
-            oninput={(ev: InputEvent) => {
-              if (this.entry) { this.entry.email = this.handleInputEvent(ev) }
-            }}>
-            <md-icon slot="leading-icon">mail</md-icon>
-          </md-filled-text-field>
+              {this.isDonorMode ? undefined : this.renderSex()}
+              {this.isDonorMode ? undefined : this.renderBloodType()}
+            </div>
+          </section>
 
-          <md-filled-text-field label="Telefónne číslo" type="tel"
-            value={this.entry?.phone}
-            oninput={(ev: InputEvent) => {
-              if (this.entry) { this.entry.phone = this.handleInputEvent(ev) }
-            }}>
-            <md-icon slot="leading-icon">phone</md-icon>
-          </md-filled-text-field>
+          <section class="form-section">
+            <h3 class="section-title">Kontaktné údaje</h3>
+            <div class="fields">
+              <md-filled-text-field label="E-mail" type="email"
+                value={this.entry?.email}
+                oninput={(ev: InputEvent) => {
+                  if (this.entry) { this.entry.email = this.handleInputEvent(ev) }
+                }}>
+                <md-icon slot="leading-icon">mail</md-icon>
+              </md-filled-text-field>
 
-          {this.renderPreferredType()}
-          {this.renderPreferredSite()}
-          {this.isDonorMode ? undefined : this.renderEligibility()}
+              <md-filled-text-field label="Telefónne číslo" type="tel"
+                value={this.entry?.phone}
+                oninput={(ev: InputEvent) => {
+                  if (this.entry) { this.entry.phone = this.handleInputEvent(ev) }
+                }}>
+                <md-icon slot="leading-icon">phone</md-icon>
+              </md-filled-text-field>
+            </div>
+          </section>
 
-          <md-filled-text-field label="Registrovaný od" disabled
-            value={new Date(this.entry?.registeredSince || Date.now()).toLocaleDateString()}>
-            <md-icon slot="leading-icon">how_to_reg</md-icon>
-          </md-filled-text-field>
+          <section class="form-section">
+            <h3 class="section-title">Zdravotné a darcovské údaje</h3>
+            <div class="fields">
+              {this.renderPreferredType()}
+              {this.renderPreferredSite()}
+              {this.isDonorMode ? undefined : this.renderEligibility()}
+            </div>
+          </section>
         </form>
 
         {this.renderLimits()}
@@ -220,7 +238,7 @@ export class Cv2xvancoaBloodDonorsEditor {
 
   private renderSex() {
     return (
-      <md-filled-select label="Pohlavie"
+      <md-filled-select label="Pohlavie" required={this.isNew}
         display-text={SEX_OPTIONS.find(o => o.code === this.entry?.sex)?.label}
         oninput={(ev: InputEvent) => {
           if (this.entry) { this.entry.sex = (ev.target as HTMLInputElement).value }
@@ -237,7 +255,7 @@ export class Cv2xvancoaBloodDonorsEditor {
 
   private renderBloodType() {
     return (
-      <md-filled-select label="Krvná skupina"
+      <md-filled-select label="Krvná skupina" required={this.isNew}
         display-text={this.entry?.bloodType}
         oninput={(ev: InputEvent) => {
           if (this.entry) { this.entry.bloodType = (ev.target as HTMLInputElement).value }
@@ -345,12 +363,18 @@ export class Cv2xvancoaBloodDonorsEditor {
       const countThisYear = ofType.filter(d => new Date(d.date!).getFullYear() === thisYear).length;
       return (
         <div class={"limit-row" + (tooSoon ? " too-soon" : "")}>
-          <div class="limit-type">{limit.label}</div>
-          <div class="limit-detail">Počet odberov: {ofType.length}
-            {code === "blood" ? ` (tento rok ${countThisYear}/${annualCap})` : ""}</div>
-          <div class="limit-detail">Posledný odber: {new Date(lastTime).toLocaleDateString()}</div>
-          <div class="limit-detail">
-            Najskôr ďalší možný: {tooSoon ? new Date(nextEligible).toLocaleDateString() : "možný teraz"}
+          <div class="limit-head">
+            <span class="limit-type">{limit.label}</span>
+            <span class={"limit-status" + (tooSoon ? " soon" : " ok")}>
+              {tooSoon
+                ? `Ďalší možný ${new Date(nextEligible).toLocaleDateString()}`
+                : "Možný teraz"}
+            </span>
+          </div>
+          <div class="limit-meta">
+            <span>Počet odberov: {ofType.length}</span>
+            <span>{code === "blood" ? ` tento rok ${countThisYear}/${annualCap}` : ""}</span>
+            <span>Posledný: {new Date(lastTime).toLocaleDateString()}</span>
           </div>
         </div>
       );

@@ -1,42 +1,142 @@
 :host {
+  --navy: #16306b;
+  --blood: #c8102e;
+
   display: block;
   width: 100%;
-  padding: 1rem;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 2rem;
   box-sizing: border-box;
+  color: var(--navy);
+  font-family: 'Roboto', sans-serif;
 }
 
-h2 {
-  margin: 0.5rem 0;
+.page-title {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 1.25rem;
+}
+
+/* ===== karty / sekcie ===== */
+.card {
+  background: #fff;
+  border: 1px solid #e3e7ef;
+  border-radius: 14px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(22, 48, 107, 0.06);
+}
+
+.section-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+/* hlavička s menom, krvnou skupinou a tlačidlom */
+.head-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.avatar {
+  --md-icon-size: 3.5rem;
+  color: var(--navy);
+  flex: 0 0 auto;
+}
+
+.head-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
 }
 
 .name {
   font-size: 1.5rem;
   font-weight: 700;
-  margin-bottom: 1rem;
+  line-height: 1.1;
 }
 
+.head-sub {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  background: var(--blood);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 0.15rem 0.7rem;
+  border-radius: 999px;
+}
+
+.reg {
+  font-size: 0.85rem;
+  opacity: 0.6;
+}
+
+.edit-btn {
+  margin-left: auto;
+  flex: 0 0 auto;
+  --md-filled-button-container-color: var(--navy);
+}
+
+/* dve informačné karty vedľa seba (na mobile pod sebou) */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* riadky informácií */
 .info {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  margin-bottom: 1rem;
-  max-width: 28rem;
 }
 
 .row {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
   gap: 1rem;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 0.25rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid #eef1f5;
+}
+
+.row:last-child {
+  border-bottom: none;
 }
 
 .label {
-  opacity: 0.7;
+  opacity: 0.65;
+  font-size: 0.9rem;
 }
 
-md-divider {
-  margin: 1.5rem 0 1rem;
+.value {
+  font-weight: 600;
+  text-align: right;
+}
+
+/* zoznam termínov */
+md-list {
+  --md-list-container-color: transparent;
+  --md-list-item-leading-icon-color: var(--blood);
+  --md-list-item-label-text-color: var(--navy);
+}
+
+/* oddeľovač medzi termínmi */
+md-list-item:not(:last-of-type) {
+  border-bottom: 1px solid #e7ebf2;
 }
 
 .empty {
@@ -44,7 +144,7 @@ md-divider {
 }
 
 .error {
-  color: red;
+  color: var(--blood);
   text-align: center;
   font-weight: 700;
   padding: 1rem;
@@ -53,4 +153,51 @@ md-divider {
 .loading {
   opacity: 0.7;
   padding: 1rem;
+}
+
+/* ===== Responzivita ===== */
+
+/* Tablet: karty informácií pod seba (širšie, čitateľnejšie) */
+@media (max-width: 760px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Telefón: hlavička pod seba, tlačidlo na celú šírku, label nad hodnotou */
+@media (max-width: 600px) {
+  :host {
+    padding: 1rem 0.75rem 1.5rem;
+  }
+
+  .page-title {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+
+  .head-card {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .edit-btn {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .row {
+    flex-direction: column;
+    gap: 0.1rem;
+    align-items: stretch;
+  }
+
+  .value {
+    text-align: left;
+    font-size: 1.05rem;
+  }
 }

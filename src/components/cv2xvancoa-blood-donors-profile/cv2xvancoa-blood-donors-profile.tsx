@@ -58,44 +58,62 @@ export class Cv2xvancoaBloodDonorsProfile {
       .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
     return (
       <Host>
-        <h2>Môj účet</h2>
-        <div class="name">{d.name}</div>
+        <h2 class="page-title">Môj účet</h2>
 
-        <div class="info">
-          <div class="row"><span class="label">E-mail:</span><span>{d.email || "—"}</span></div>
-          <div class="row"><span class="label">Telefónne číslo:</span><span>{d.phone || "—"}</span></div>
-          <div class="row"><span class="label">Krvná skupina:</span><span>{d.bloodType || "—"}</span></div>
-          <div class="row"><span class="label">Preferovaný typ odberu:</span>
-            <span>{PREFERRED_LABEL[d.preferredDonationType] || "—"}</span></div>
-          <div class="row"><span class="label">Preferované odberné miesto:</span>
-            <span>{siteName(d.preferredSite)}</span></div>
+        <div class="card head-card">
+          <md-icon class="avatar">account_circle</md-icon>
+          <div class="head-text">
+            <div class="name">{d.name}</div>
+            <div class="head-sub">
+              {d.bloodType ? <span class="badge">{d.bloodType}</span> : null}
+              {d.donorId ? <span class="reg">Reg. č. {d.donorId}</span> : null}
+            </div>
+          </div>
+          <md-filled-button class="edit-btn" onClick={() => this.editProfile.emit(d.id)}>
+            <md-icon slot="icon">edit</md-icon>
+            Upraviť profil
+          </md-filled-button>
         </div>
 
-        <md-filled-button onClick={() => this.editProfile.emit(d.id)}>
-          <md-icon slot="icon">edit</md-icon>
-          Upraviť profil
-        </md-filled-button>
+        <div class="grid-2">
+          <section class="card">
+            <h3 class="section-title">Kontaktné údaje</h3>
+            <div class="info">
+              <div class="row"><span class="label">E-mail</span><span class="value">{d.email || "—"}</span></div>
+              <div class="row"><span class="label">Telefónne číslo</span><span class="value">{d.phone || "—"}</span></div>
+            </div>
+          </section>
 
-        <md-divider></md-divider>
+          <section class="card">
+            <h3 class="section-title">Darcovské údaje</h3>
+            <div class="info">
+              <div class="row"><span class="label">Krvná skupina</span><span class="value">{d.bloodType || "—"}</span></div>
+              <div class="row"><span class="label">Preferovaný typ odberu</span><span class="value">{PREFERRED_LABEL[d.preferredDonationType] || "—"}</span></div>
+              <div class="row"><span class="label">Preferované odberné miesto</span><span class="value">{siteName(d.preferredSite)}</span></div>
+            </div>
+          </section>
+        </div>
 
-        <h3>Moje termíny</h3>
-        {donations.length === 0
-          ? <div class="empty">Zatiaľ žiadne termíny.</div>
-          : <md-list>
-            {donations.map(donation =>
-              <md-list-item>
-                <md-icon slot="start">bloodtype</md-icon>
-                <div slot="headline">{donation.donationType?.value ?? "Darovanie krvi"}</div>
-                <div slot="supporting-text">
-                  {[
-                    donation.date ? new Date(donation.date).toLocaleString() : "",
-                    donation.status,
-                  ].filter(Boolean).join(" · ")}
-                </div>
-              </md-list-item>
-            )}
-          </md-list>
-        }
+        <section class="card">
+          <h3 class="section-title">Moje termíny</h3>
+          {donations.length === 0
+            ? <div class="empty">Zatiaľ žiadne termíny.</div>
+            : <md-list>
+              {donations.map(donation =>
+                <md-list-item>
+                  <md-icon slot="start">bloodtype</md-icon>
+                  <div slot="headline">{donation.donationType?.value ?? "Darovanie krvi"}</div>
+                  <div slot="supporting-text">
+                    {[
+                      donation.date ? new Date(donation.date).toLocaleString() : "",
+                      donation.status,
+                    ].filter(Boolean).join(" · ")}
+                  </div>
+                </md-list-item>
+              )}
+            </md-list>
+          }
+        </section>
       </Host>
     );
   }

@@ -73,6 +73,7 @@ export class Cv2xvancoaBloodDonorsList {
     const donors = this.filteredDonors();
     return (
       <Host>
+        <h2 class="page-title">Darcovia krvi</h2>
         <md-filled-text-field class="search" label="Hľadať darcu (meno alebo reg. číslo)"
           value={this.searchTerm}
           oninput={(ev: InputEvent) => this.searchTerm = (ev.target as HTMLInputElement).value}>
@@ -89,6 +90,9 @@ export class Cv2xvancoaBloodDonorsList {
                   <div slot="headline">{donor.name}</div>
                   <div slot="supporting-text">{this.donorSummary(donor)}</div>
                   <md-icon slot="start">bloodtype</md-icon>
+                  {donor.donorId
+                    ? <div slot="trailing-supporting-text" class="reg-no">Reg. č. {donor.donorId}</div>
+                    : undefined}
                 </md-list-item>
               )}
             </md-list>

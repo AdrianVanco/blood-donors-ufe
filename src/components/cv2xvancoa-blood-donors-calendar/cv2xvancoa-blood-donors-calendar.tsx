@@ -107,10 +107,10 @@ export class Cv2xvancoaBloodDonorsCalendar {
 
   render() {
     const left = this.monthCursor;
-    const right = new Date(left.getFullYear(), left.getMonth() + 1, 1);
     const atCurrentMonth = left.getTime() <= startOfMonth(new Date()).getTime();
     return (
       <Host>
+        <h2 class="page-title">Rezervácia termínu</h2>
         {this.notice
           ? <div class="notice">
             <md-icon>check_circle</md-icon>
@@ -137,15 +137,19 @@ export class Cv2xvancoaBloodDonorsCalendar {
           </md-filled-select>
         </div>
 
-        <div class="months">
-          <md-filled-icon-button class="nav-btn" disabled={atCurrentMonth} onClick={() => this.shiftMonths(-1)}>
-            <md-icon>chevron_left</md-icon>
-          </md-filled-icon-button>
-          {this.renderMonth(left)}
-          {this.renderMonth(right)}
-          <md-filled-icon-button class="nav-btn" onClick={() => this.shiftMonths(1)}>
-            <md-icon>chevron_right</md-icon>
-          </md-filled-icon-button>
+        <div class="calendar">
+          <div class="cal-nav">
+            <md-filled-icon-button class="nav-btn" disabled={atCurrentMonth} onClick={() => this.shiftMonths(-1)}>
+              <md-icon>chevron_left</md-icon>
+            </md-filled-icon-button>
+            <div class="cal-title">{MONTHS[left.getMonth()]} {left.getFullYear()}</div>
+            <md-filled-icon-button class="nav-btn" onClick={() => this.shiftMonths(1)}>
+              <md-icon>chevron_right</md-icon>
+            </md-filled-icon-button>
+          </div>
+          <div class="months">
+            {this.renderMonth(left)}
+          </div>
         </div>
 
         <div class="legend">
@@ -185,7 +189,6 @@ export class Cv2xvancoaBloodDonorsCalendar {
 
     return (
       <div class="month">
-        <div class="month-title">{MONTHS[month]} {year}</div>
         <div class="dow-row">
           {DOW_SHORT.map(d => <div class="dow">{d}</div>)}
         </div>
