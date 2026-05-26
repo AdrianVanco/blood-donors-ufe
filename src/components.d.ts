@@ -10,8 +10,11 @@ export { Donation } from "./api/blood-donors";
 export namespace Components {
     /**
      * Hlavný aplikačný komponent microfrontendu darcov krvi.
-     * Podľa aktuálnej URL (relatívnej k base-path) rozhoduje, či sa zobrazí
-     * zoznam darcov alebo editor konkrétneho darcu - funguje ako jednoduchý router.
+     * Podľa aktuálnej URL (relatívnej k base-path) rozhoduje, ktorá obrazovka sa
+     * zobrazí - funguje ako jednoduchý router.
+     * Flow sa delí podľa role prihláseného používateľa (OIDC/Dex cez Envoy Gateway):
+     *  - pracovník (pracovnik): zoznam darcov, plný editor ľubovoľného darcu, rezervácia
+     *  - darca (darca): iba rezervácia a vlastný účet/profil (self-edit), bez zoznamu darcov
      */
     interface Cv2xvancoaBloodDonors {
         "apiBase"?: string;
@@ -19,6 +22,7 @@ export namespace Components {
           * @default ""
          */
         "basePath": string;
+        "role"?: string;
         "siteId"?: string;
     }
     interface Cv2xvancoaBloodDonorsCalendar {
@@ -36,6 +40,7 @@ export namespace Components {
         "preselectType"?: string;
         "sex"?: string;
         "siteId"?: string;
+        "userEmail"?: string;
     }
     interface Cv2xvancoaBloodDonorsEditor {
         "apiBase"?: string;
@@ -62,7 +67,10 @@ export namespace Components {
     interface Cv2xvancoaBloodDonorsProfile {
         "apiBase"?: string;
         "donorId"?: string;
+        "role"?: string;
         "siteId"?: string;
+        "userEmail"?: string;
+        "userName"?: string;
     }
 }
 export interface Cv2xvancoaBloodDonorsCalendarCustomEvent<T> extends CustomEvent<T> {
@@ -84,8 +92,11 @@ export interface Cv2xvancoaBloodDonorsProfileCustomEvent<T> extends CustomEvent<
 declare global {
     /**
      * Hlavný aplikačný komponent microfrontendu darcov krvi.
-     * Podľa aktuálnej URL (relatívnej k base-path) rozhoduje, či sa zobrazí
-     * zoznam darcov alebo editor konkrétneho darcu - funguje ako jednoduchý router.
+     * Podľa aktuálnej URL (relatívnej k base-path) rozhoduje, ktorá obrazovka sa
+     * zobrazí - funguje ako jednoduchý router.
+     * Flow sa delí podľa role prihláseného používateľa (OIDC/Dex cez Envoy Gateway):
+     *  - pracovník (pracovnik): zoznam darcov, plný editor ľubovoľného darcu, rezervácia
+     *  - darca (darca): iba rezervácia a vlastný účet/profil (self-edit), bez zoznamu darcov
      */
     interface HTMLCv2xvancoaBloodDonorsElement extends Components.Cv2xvancoaBloodDonors, HTMLStencilElement {
     }
@@ -183,8 +194,11 @@ declare global {
 declare namespace LocalJSX {
     /**
      * Hlavný aplikačný komponent microfrontendu darcov krvi.
-     * Podľa aktuálnej URL (relatívnej k base-path) rozhoduje, či sa zobrazí
-     * zoznam darcov alebo editor konkrétneho darcu - funguje ako jednoduchý router.
+     * Podľa aktuálnej URL (relatívnej k base-path) rozhoduje, ktorá obrazovka sa
+     * zobrazí - funguje ako jednoduchý router.
+     * Flow sa delí podľa role prihláseného používateľa (OIDC/Dex cez Envoy Gateway):
+     *  - pracovník (pracovnik): zoznam darcov, plný editor ľubovoľného darcu, rezervácia
+     *  - darca (darca): iba rezervácia a vlastný účet/profil (self-edit), bez zoznamu darcov
      */
     interface Cv2xvancoaBloodDonors {
         "apiBase"?: string;
@@ -192,6 +206,7 @@ declare namespace LocalJSX {
           * @default ""
          */
         "basePath"?: string;
+        "role"?: string;
         "siteId"?: string;
     }
     interface Cv2xvancoaBloodDonorsCalendar {
@@ -210,6 +225,7 @@ declare namespace LocalJSX {
         "preselectType"?: string;
         "sex"?: string;
         "siteId"?: string;
+        "userEmail"?: string;
     }
     interface Cv2xvancoaBloodDonorsEditor {
         "apiBase"?: string;
@@ -241,18 +257,23 @@ declare namespace LocalJSX {
         "apiBase"?: string;
         "donorId"?: string;
         "onEdit-profile"?: (event: Cv2xvancoaBloodDonorsProfileCustomEvent<string>) => void;
+        "role"?: string;
         "siteId"?: string;
+        "userEmail"?: string;
+        "userName"?: string;
     }
 
     interface Cv2xvancoaBloodDonorsAttributes {
         "basePath": string;
         "apiBase": string;
         "siteId": string;
+        "role": string;
     }
     interface Cv2xvancoaBloodDonorsCalendarAttributes {
         "apiBase": string;
         "siteId": string;
         "donorId": string;
+        "userEmail": string;
         "pickerMode": boolean;
         "sex": string;
         "donorEligible": boolean;
@@ -272,6 +293,9 @@ declare namespace LocalJSX {
         "apiBase": string;
         "siteId": string;
         "donorId": string;
+        "userEmail": string;
+        "userName": string;
+        "role": string;
     }
 
     interface IntrinsicElements {
@@ -288,8 +312,11 @@ declare module "@stencil/core" {
         interface IntrinsicElements {
             /**
              * Hlavný aplikačný komponent microfrontendu darcov krvi.
-             * Podľa aktuálnej URL (relatívnej k base-path) rozhoduje, či sa zobrazí
-             * zoznam darcov alebo editor konkrétneho darcu - funguje ako jednoduchý router.
+             * Podľa aktuálnej URL (relatívnej k base-path) rozhoduje, ktorá obrazovka sa
+             * zobrazí - funguje ako jednoduchý router.
+             * Flow sa delí podľa role prihláseného používateľa (OIDC/Dex cez Envoy Gateway):
+             *  - pracovník (pracovnik): zoznam darcov, plný editor ľubovoľného darcu, rezervácia
+             *  - darca (darca): iba rezervácia a vlastný účet/profil (self-edit), bez zoznamu darcov
              */
             "cv2xvancoa-blood-donors": LocalJSX.IntrinsicElements["cv2xvancoa-blood-donors"] & JSXBase.HTMLAttributes<HTMLCv2xvancoaBloodDonorsElement>;
             "cv2xvancoa-blood-donors-calendar": LocalJSX.IntrinsicElements["cv2xvancoa-blood-donors-calendar"] & JSXBase.HTMLAttributes<HTMLCv2xvancoaBloodDonorsCalendarElement>;

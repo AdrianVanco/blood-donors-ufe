@@ -7,11 +7,74 @@
 
 .topnav {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid #e0e0e0;
   margin-bottom: 0.5rem;
   --md-sys-color-primary: var(--navy);
+}
+
+.nav-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* identita prihláseného používateľa (meno + rola) */
+.nav-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+}
+
+.nav-identity .user-name {
+  font-size: 0.9rem;
+  color: #444;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.role-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.role-badge.worker {
+  background: var(--navy);
+}
+
+.role-badge.donor {
+  background: #c8102e;
+}
+
+.logout-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--navy);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 50%;
+  line-height: 0;
+}
+
+.logout-btn:hover {
+  background: rgba(22, 48, 107, 0.08);
+}
+
+.logout-btn md-icon {
+  --md-icon-size: 1.25rem;
 }
 
 /* ===== Responzivita ===== */
@@ -21,13 +84,24 @@
   .topnav {
     gap: 0.5rem;
     padding: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .nav-actions {
+    gap: 0.5rem;
     overflow-x: auto;
     flex-wrap: nowrap;
     -webkit-overflow-scrolling: touch;
+    width: 100%;
   }
 
-  .topnav > * {
+  .nav-actions > * {
     flex: 0 0 auto;
+  }
+
+  .nav-identity {
+    width: 100%;
+    justify-content: flex-end;
   }
 }
 

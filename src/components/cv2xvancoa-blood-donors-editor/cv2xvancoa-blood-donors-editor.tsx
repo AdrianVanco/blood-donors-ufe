@@ -220,7 +220,8 @@ export class Cv2xvancoaBloodDonorsEditor {
         </form>
 
         {this.renderLimits()}
-        {this.renderTermini()}
+        {/* darca termíny spravuje v "Môj účet", v editore profilu ich neopakujeme */}
+        {this.isDonorMode ? undefined : this.renderTermini()}
 
         <md-divider></md-divider>
         <div class="actions">
@@ -492,7 +493,16 @@ export class Cv2xvancoaBloodDonorsEditor {
   // Tlačidlo "Späť" umožní opraviť preklik (vráti termín na začiatok toku).
   private terminActions(donation: Donation) {
     if (this.isDonorMode) {
-      return undefined; // darca termíny nespravuje, len ich vidí (rezervuje cez kalendár)
+      // darca nespravuje stavy, ale smie zrušiť svoju prebiehajúcu rezerváciu
+      if (donation.status === ST_BOOKED || donation.status === ST_ELIGIBLE) {
+        return (
+          <md-outlined-button onClick={() => this.askConfirm("Naozaj zrušiť túto rezerváciu?", "Zrušiť rezerváciu", () => this.advanceStatus(donation, ST_CANCELLED))}>
+            <md-icon slot="icon">event_busy</md-icon>
+            Zrušiť rezerváciu
+          </md-outlined-button>
+        );
+      }
+      return undefined;
     }
     const back = (
       <md-outlined-button onClick={() => this.advanceStatus(donation, ST_BOOKED)}>

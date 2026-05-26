@@ -1,9 +1,16 @@
 import { Component, Host, Prop, State, Event, EventEmitter, h } from '@stencil/core';
 import { DONATION_SITES as SITES } from '../../global/sites';
-import { DonorsApi, Configuration, Donation } from '../../api/blood-donors';
+import { DonorsApi, Configuration, Donation, Donor } from '../../api/blood-donors';
 
 // obmedzenia NTS SR: min. odstup medzi odbermi daného typu + ročný strop pre krv
 const ST_DONE = "Odber dokončený";
+// stavy zhodné s editorom
+const ST_BOOKED = "Rezervácia dokončená";
+const ST_ELIGIBLE = "Spôsobilý - čaká na odber";
+const DONATION_TYPES = [
+  { code: "blood", value: "Darovanie krvi" },
+  { code: "plasma", value: "Darovanie krvnej plazmy" },
+];
 const INTERVAL_DAYS: { [code: string]: number } = { blood: 70, plasma: 14 };
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -29,8 +36,10 @@ function bloodSlots(): string[] {
 export class Cv2xvancoaBloodDonorsCalendar {
   @Prop() apiBase?: string;
   @Prop() siteId?: string;
-  // ktorý darca je "prihlásený" (zatiaľ bez auth - default prvý darca)
+  // ktorý darca je "prihlásený": explicitné id má prednosť, inak zhoda podľa emailu
   @Prop() donorId?: string;
+  // email prihláseného darcu (z OIDC cez hlavný komponent) - na nájdenie "môjho" záznamu
+  @Prop() userEmail?: string;
   // picker režim: kalendár sa použije ako výber termínu (napr. v dialógu editora)
   // a namiesto hlášky emituje vybraný termín
   @Prop() pickerMode?: boolean = false;
@@ -51,6 +60,12 @@ export class Cv2xvancoaBloodDonorsCalendar {
   @State() noticeKind: 'ok' | 'warn' = 'ok';
   // spôsobilosť prihláseného darcu (nespôsobilý si nemôže rezervovať termín)
   @State() eligible: boolean = true;
+  // celý záznam prihláseného darcu (na uloženie novej rezervácie)
+  @State() donor?: Donor;
+  // prebieha ukladanie rezervácie
+  @State() saving: boolean = false;
+  // prihlásený darca, ktorý ešte nemá vlastný záznam v systéme
+  @State() noRecord: boolean = false;
 
   async componentWillLoad() {
     this.site = this.siteId || SITES[0].id;
@@ -68,10 +83,21 @@ export class Cv2xvancoaBloodDonorsCalendar {
     try {
       const configuration = new Configuration({ basePath: this.apiBase });
       const all = await new DonorsApi(configuration).getDonors({ siteId: this.siteId });
-      const me = all && all.length > 0
-        ? (this.donorId ? all.find(d => d.donorId === this.donorId || d.id === this.donorId) || all[0] : all[0])
+      // poradie hľadania "môjho" záznamu: explicitné id -> zhoda emailu -> prvý (dev fallback)
+      const byId = this.donorId
+        ? all?.find(d => d.donorId === this.donorId || d.id === this.donorId)
         : undefined;
+      const byEmail = this.userEmail
+        ? all?.find(d => (d.email || "").toLowerCase() === this.userEmail!.toLowerCase())
+        : undefined;
+      // prihlásený darca bez vlastného záznamu -> neviažeme sa na cudzí záznam
+      if (this.userEmail && !byId && !byEmail) {
+        this.noRecord = true;
+        return;
+      }
+      const me = all && all.length > 0 ? (byId || byEmail || all[0]) : undefined;
       if (me) {
+        this.donor = me;
         if (me.preferredSite && SITES.some(s => s.id === me.preferredSite)) {
           this.site = me.preferredSite;
         }
@@ -92,11 +118,26 @@ export class Cv2xvancoaBloodDonorsCalendar {
     this.selectedSlot = null;
   }
 
+  // prebiehajúca (nezrušená, neukončená) rezervácia darcu - darca môže mať
+  // súčasne len jednu. Vráti ju, ak existuje (inak undefined).
+  private activeReservation(): Donation | undefined {
+    return (this.donations || []).find(d =>
+      d.status === ST_BOOKED || d.status === ST_ELIGIBLE);
+  }
+
   // dostupnosť dňa: nie v minulosti; krv Po-Pi, plazma len Po-Št;
   // + dodržanie odstupu od posledného odberu a ročného limitu krvi
   private isAvailable(date: Date): boolean {
     // nespôsobilému darcovi (v picker režime pracovníka) nedovolíme rezerváciu
     if (this.pickerMode && this.donorEligible === false) {
+      return false;
+    }
+    // darca s prebiehajúcou rezerváciou si nemôže rezervovať ďalší termín
+    if (!this.pickerMode && this.activeReservation()) {
+      return false;
+    }
+    // prihlásený darca bez vlastného záznamu si nemôže rezervovať
+    if (!this.pickerMode && this.noRecord) {
       return false;
     }
     const today = new Date();
@@ -197,8 +238,8 @@ export class Cv2xvancoaBloodDonorsCalendar {
     this.scrollToEl(() => this.confirmEl);
   }
 
-  private reserve() {
-    if (!this.selectedDay || !this.selectedSlot) {
+  private async reserve() {
+    if (!this.selectedDay || !this.selectedSlot || this.saving) {
       return;
     }
     // picker režim (pracovník v editore): emitujeme vybraný termín a končíme
@@ -208,19 +249,77 @@ export class Cv2xvancoaBloodDonorsCalendar {
       this.selectedSlot = null;
       return;
     }
+    // prihlásený darca bez vlastného záznamu si nemôže rezervovať
+    if (this.noRecord) {
+      this.noticeKind = 'warn';
+      this.notice = "Nemáte darcovský záznam. Pre registráciu kontaktujte pracovníka transfúznej stanice.";
+      return;
+    }
     // nespôsobilý darca si nemôže rezervovať termín
     if (!this.eligible) {
       this.noticeKind = 'warn';
       this.notice = "Nie ste spôsobilý na darovanie, termín si nemôžete rezervovať. Kontaktujte transfúznu stanicu.";
       return;
     }
+    // darca môže mať len jednu prebiehajúcu rezerváciu
+    if (this.activeReservation()) {
+      this.noticeKind = 'warn';
+      this.notice = "Máte prebiehajúcu rezerváciu. Pre vytvorenie novej ju najprv zrušte v sekcii Môj účet.";
+      this.selectedDay = null;
+      this.selectedSlot = null;
+      return;
+    }
+
     const d = this.selectedDay;
     const siteName = SITES.find(s => s.id === this.site)?.name ?? this.site;
     const typeName = this.type === 'plasma' ? "darovanie krvnej plazmy" : "darovanie krvi";
-    this.noticeKind = 'ok';
-    this.notice = `Rezervácia úspešná: ${typeName}, ${siteName}, ${formatDay(d)} o ${this.selectedSlot}.`;
-    this.selectedDay = null;
-    this.selectedSlot = null;
+    const okMsg = `Rezervácia úspešná: ${typeName}, ${siteName}, ${formatDay(d)} o ${this.selectedSlot}.`;
+
+    // vytvor nový termín (rovnaký tvar ako v editore: dátum+čas, typ, stav)
+    const start = new Date(d);
+    const [h, m] = this.selectedSlot.split(":").map(Number);
+    start.setHours(h, m, 0, 0);
+    const dt = DONATION_TYPES.find(t => t.code === this.type);
+    const donation: Donation = {
+      date: start,
+      donationType: dt ? { code: dt.code, value: dt.value } : undefined,
+      status: ST_BOOKED,
+    };
+
+    // bez identifikovaného darcu (napr. dev bez dát) termín do backendu neuložíme
+    if (!this.donor || !this.donor.id) {
+      this.donations = [...(this.donations || []), donation];
+      this.noticeKind = 'ok';
+      this.notice = okMsg;
+      this.selectedDay = null;
+      this.selectedSlot = null;
+      return;
+    }
+
+    // ulož termín k prihlásenému darcovi cez API
+    this.saving = true;
+    try {
+      const updated: Donor = { ...this.donor, donations: [...(this.donor.donations || []), donation] };
+      const configuration = new Configuration({ basePath: this.apiBase });
+      const response = await new DonorsApi(configuration)
+        .updateDonorRaw({ siteId: this.siteId, entryId: this.donor.id, donor: updated });
+      if (response.raw.status < 299) {
+        this.donor = updated;
+        this.donations = updated.donations;
+        this.noticeKind = 'ok';
+        this.notice = okMsg;
+        this.selectedDay = null;
+        this.selectedSlot = null;
+      } else {
+        this.noticeKind = 'warn';
+        this.notice = "Rezerváciu sa nepodarilo uložiť. Skúste to znova.";
+      }
+    } catch (e) {
+      this.noticeKind = 'warn';
+      this.notice = "Rezerváciu sa nepodarilo uložiť (chyba spojenia so serverom).";
+    } finally {
+      this.saving = false;
+    }
   }
 
   render() {
@@ -232,10 +331,26 @@ export class Cv2xvancoaBloodDonorsCalendar {
       <Host>
         {this.pickerMode ? undefined : <h2 class="page-title">Rezervácia termínu</h2>}
 
-        {!this.pickerMode && !this.eligible
+        {!this.pickerMode && this.noRecord
+          ? <div class="notice warn">
+            <md-icon>error</md-icon>
+            <span>Nemáte darcovský záznam. Pre registráciu kontaktujte pracovníka transfúznej stanice.</span>
+          </div>
+          : undefined}
+
+        {!this.pickerMode && !this.noRecord && !this.eligible
           ? <div class="notice warn">
             <md-icon>error</md-icon>
             <span>Nie ste spôsobilý na darovanie, rezervácia termínu nie je možná. Kontaktujte transfúznu stanicu.</span>
+          </div>
+          : undefined}
+
+        {!this.pickerMode && this.eligible && this.activeReservation()
+          ? <div class="notice warn">
+            <md-icon>event_busy</md-icon>
+            <span>Máte prebiehajúcu rezerváciu
+              {this.activeReservation()?.date ? ` (${formatDay(new Date(this.activeReservation()!.date!))})` : ""}.
+              Ďalší termín si môžete rezervovať až po jej zrušení v sekcii „Môj účet".</span>
           </div>
           : undefined}
 

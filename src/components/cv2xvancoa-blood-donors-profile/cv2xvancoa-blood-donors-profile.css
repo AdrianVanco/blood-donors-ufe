@@ -85,6 +85,28 @@
   opacity: 0.6;
 }
 
+.role-pill {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  color: #fff;
+}
+
+.role-pill.worker {
+  background: var(--navy);
+}
+
+.role-pill.donor {
+  background: var(--blood);
+}
+
+.signed-in {
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
 .edit-btn {
   margin-left: auto;
   flex: 0 0 auto;
@@ -163,6 +185,18 @@ md-list {
 /* oddeľovač medzi termínmi */
 md-list-item:not(:last-of-type) {
   border-bottom: 1px solid #e7ebf2;
+}
+
+/* tlačidlo na zrušenie rezervácie v zozname termínov */
+.cancel-resv {
+  --md-outlined-button-label-text-color: var(--blood);
+  --md-outlined-button-icon-color: var(--blood);
+  --md-outlined-button-outline-color: var(--blood);
+  --md-outlined-button-hover-label-text-color: var(--blood);
+  --md-outlined-button-hover-icon-color: var(--blood);
+  --md-outlined-button-container-height: 36px;
+  white-space: nowrap;
+  margin-inline-start: 0.5rem;
 }
 
 .empty {
