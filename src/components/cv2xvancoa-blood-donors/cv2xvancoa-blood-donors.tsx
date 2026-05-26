@@ -37,8 +37,8 @@ export class Cv2xvancoaBloodDonors {
     this.snackTimer = setTimeout(() => (this.snackbar = null), 3500);
   }
 
-  componentWillLoad() {
-    this.user = getCurrentUser(this.role);
+  async componentWillLoad() {
+    this.user = await getCurrentUser(this.apiBase, this.role);
 
     const baseUri = new URL(this.basePath, document.baseURI || "/").pathname;
 
