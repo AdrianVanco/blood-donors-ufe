@@ -249,11 +249,11 @@ components:
         email:
           type: string
           format: email
-          example: vancoadrian7@gmail.com
+          example: a.vanco@example.com
           description: Contact e-mail of the donor
         phone:
           type: string
-          example: "+421917529741"
+          example: "+421900000000"
           description: Contact phone number of the donor
         preferredDonationType:
           type: string
@@ -367,8 +367,8 @@ components:
         donorId: "1234567890"
         sex: M
         bloodType: A+
-        email: vancoadrian7@gmail.com
-        phone: "+421917529741"
+        email: a.vanco@example.com
+        phone: "+421900000000"
         preferredDonationType: blood
         preferredSite: bratislava-bory
         eligible: true
@@ -390,8 +390,8 @@ components:
           donorId: "1234567890"
           sex: M
           bloodType: A+
-          email: vancoadrian7@gmail.com
-          phone: "+421917529741"
+          email: a.vanco@example.com
+          phone: "+421900000000"
           preferredDonationType: blood
           preferredSite: bratislava-bory
           eligible: true
